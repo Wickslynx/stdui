@@ -1,6 +1,5 @@
 //Global stuff declared here.
 #include <stdio.h>
-#include <stdib.h>
 
 #if defined(__linux__) 
 //Linux impl.
@@ -14,10 +13,11 @@ typedef struct {
     int screen;
     Window window;
     XEvent event;
-} application;
+    GLXContext glc;
+} SApplication;
 
 
-int SDisplayOpen(application *app) {
+int SDisplayOpen(SApplication *app) {
     if (app == NULL) {
         return 0;
     }
@@ -32,7 +32,7 @@ int SDisplayOpen(application *app) {
     return 1;
 }
 
-int SWindowCreate(application *app, const char *title, int x, int y, int width, int height) {
+int SWindowCreate(SApplication *app, const char *title, int x, int y, int width, int height) {
     if (app == NULL) {
         return 0;
     }
@@ -51,11 +51,18 @@ int SWindowCreate(application *app, const char *title, int x, int y, int width, 
     XSelectInput(app->display, app->window, ExposureMask | KeyPressMask);
     XMapWindow(app->display, app->window);
     XFlush(app->display);
+
+    static int visual_attribs[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+    int num_fbc = 0;
+    GLXFBConfig *fbc = glXChooseFBConfig(app->display, DefaultScreen(app->display), visual_attribs, &num_fbc);
+    XVisualInfo *vi = glXGetVisualFromFBConfig(app->display, fbc[0]);
+    app->glc = glXCreateContext(app->display, vi, NULL, GL_TRUE);
+    glXMakeCurrent(app->display, app->window, app->glc);
     
     return 1;
 }
 
-int SEventProcess(application *app) {
+int SEventProcess(SApplication *app) {
     if (app == NULL) {
         return 0;
     }
@@ -77,11 +84,13 @@ int SEventProcess(application *app) {
     return 1;
 }
 
-void SDisplayClose(application *app) {
+void SDisplayClose(SApplication *app) {
     if (app == NULL) {
         return;
     }
 
+    glXMakeCurrent(app->display, None, NULL);
+    glXDestroyContext(app->display, app->glc);
     XDestroyWindow(app->display, app->window);
     XCloseDisplay(app->display);
 }
@@ -89,6 +98,12 @@ void SDisplayClose(application *app) {
 
 #elif defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
+
+typedef struct {
+    HINSTANCE hinstance;
+    HWND hwnd;
+} SApplication;
+
 #elif defined(__APPLE__) && defined(__MACH__)
 #include <ApplicationServices/ApplicationServices.h>
 #endif
