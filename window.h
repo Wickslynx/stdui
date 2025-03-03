@@ -1,6 +1,15 @@
 #include <stdio.h>
+
+#if defined(__linux__)
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
+#elif defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#elif defined(__APPLE__) && defined(__MACH__)
+#include <ApplicationServices/ApplicationServices.h>
+#else
+#error "Unsupported platform."
+#endif
 
 typedef struct {
     Display *display;
