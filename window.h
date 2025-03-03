@@ -1,15 +1,13 @@
+//Global stuff declared here.
 #include <stdio.h>
+#include <stdib.h>
 
-#if defined(__linux__)
-#include <X11/Xlib.h>
+#if defined(__linux__) 
+//Linux impl.
+
+//Include x11.
+#include <X11/Xlib.h> 
 #include <X11/keysym.h>
-#elif defined(_WIN32) || defined(_WIN64)
-#include <windows.h>
-#elif defined(__APPLE__) && defined(__MACH__)
-#include <ApplicationServices/ApplicationServices.h>
-#else
-#error "Unsupported platform."
-#endif
 
 typedef struct {
     Display *display;
@@ -17,6 +15,7 @@ typedef struct {
     Window window;
     XEvent event;
 } application;
+
 
 int SDisplayOpen(application *app) {
     if (app == NULL) {
@@ -86,3 +85,12 @@ void SDisplayClose(application *app) {
     XDestroyWindow(app->display, app->window);
     XCloseDisplay(app->display);
 }
+
+
+#elif defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#elif defined(__APPLE__) && defined(__MACH__)
+#include <ApplicationServices/ApplicationServices.h>
+#endif
+
+
