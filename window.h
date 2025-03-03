@@ -1,4 +1,13 @@
-#include "window.h"
+#include <stdio.h>
+#include <X11/Xlib.h>
+#include <X11/keysym.h>
+
+typedef struct {
+    Display *display;
+    int screen;
+    Window window;
+    XEvent event;
+} application;
 
 int SDisplayOpen(application *app) {
     if (app == NULL) {
@@ -23,18 +32,15 @@ int SWindowCreate(application *app, const char *title, int x, int y, int width, 
     app->window = XCreateSimpleWindow(
         app->display,
         RootWindow(app->display, app->screen),
-        x, y,                 
-        width, height,         
-        1,                     
-        BlackPixel(app->display, app->screen), 
-        WhitePixel(app->display, app->screen) 
+        x, y,
+        width, height,
+        1,
+        BlackPixel(app->display, app->screen),
+        WhitePixel(app->display, app->screen)
     );
     
-
     XStoreName(app->display, app->window, title);
-    
     XSelectInput(app->display, app->window, ExposureMask | KeyPressMask);
-
     XMapWindow(app->display, app->window);
     XFlush(app->display);
     
@@ -49,7 +55,6 @@ int SEventProcess(application *app) {
     if (XPending(app->display) > 0) {
         XNextEvent(app->display, &app->event);
         
-   
         switch (app->event.type) {
             case Expose:
                 break;
