@@ -12,7 +12,7 @@ int main() {
         return 1;
     }
     while (SEventProcess(&app)) {
-        //STriangle(&app, color.blue);
+        STriangle(&app, {0.0f, 1.0f, 0.0f});
         printf("HELLO");
     }
     SDisplayClose(&app);
