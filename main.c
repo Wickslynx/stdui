@@ -1,5 +1,5 @@
-#include <window.h>
-#include <widgets.h>
+#include <stdui/window.h>
+#include <stdui/widgets.h>
 
 int main() {
     SApplication app;
@@ -12,7 +12,7 @@ int main() {
         return 1;
     }
     while (SEventProcess(&app)) {
-        SRectangle(&app, 1.0);
+        STriangle(&app, 1.0);
         printf("HELLO");
     }
     SDisplayClose(&app);

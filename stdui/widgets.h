@@ -1,19 +1,12 @@
-#if defined(GL_VERSION) 
-#include <GL/gl.h>
-#include "internal/utils.h"
-
+#ifndef WIDGETS_H
+#define WIDGETS_H
 
 #if defined(GL_VERSION)
 #include <GL/gl.h>
+#include <X11/X.h>
+#include <X11/Xlib.h>
 #include <stdio.h>
 
-typedef struct {
-    Display *display;
-    int screen;
-    Window window;
-    XEvent event;
-    GLXContext glc;
-} SApplication;
 
 void STriangle(SApplication *app, float color[3]) {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -39,8 +32,6 @@ void SRectangle(SApplication *app, float color[3]) {
     glXSwapBuffers(app->display, app->window);
 }
 
-    
-
 void SCircle(SApplication *app, float *color) {
     //TODO: Add circle support.
     printf("I'm sorry! This feature is not implemented... Check back in updated versions.")
@@ -50,4 +41,6 @@ void SCircle(SApplication *app, float *color) {
 
 #else 
 
-#endif
+#endif //VULKAN
+
+#endif //WIDGETS_H
