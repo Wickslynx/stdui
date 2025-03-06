@@ -9,7 +9,7 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 set(OpenGL_GL_PREFERENCE GLVND)
 
 # Define the parent directory
-set(PARENT_DIR ${CMAKE_SOURCE_DIR})
+set(PARENT_DIR ${CMAKE_SOURCE_DIR}/..)
 
 # List of headers
 set(HEADERS

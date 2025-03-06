@@ -1,12 +1,20 @@
 #ifndef WIDGETS_H
 #define WIDGETS_H
 
+#include <stdio.h>
+
+#include "internal/utils.h"
+
 #if defined(GL_VERSION)
 #include <GL/gl.h>
+
+#if defined(__linux__)
 #include <GL/glx.h>
 #include <X11/X.h>
 #include <X11/Xlib.h>
-#include <stdio.h>
+#elif defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#endif
 
 
 void STriangle(SApplication *app, float color[3]) {
@@ -31,12 +39,12 @@ void SRectangle(SApplication *app, float color[3]) {
         glVertex2f(-0.5f, 0.5f);  
     glEnd();
 
-    glxSwapBuffers(app->display, app->window);
+    glXSwapBuffers(app->display, app->window);
 }
 
 void SCircle(SApplication *app, float *color) {
     //TODO: Add circle support.
-    printf("I'm sorry! This feature is not implemented... Check back in updated versions.")
+    printf("I'm sorry! This feature is not implemented... Check back in updated versions.");
 }
 
 #elif defined(VULKAN_VERSION_1_0)
