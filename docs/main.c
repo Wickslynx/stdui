@@ -1,5 +1,6 @@
 #include <stdui/window.h>
 #include <stdui/widgets.h>
+#include <stdui/colors.h>
 
 int main() {
     SApplication app;
@@ -12,8 +13,8 @@ int main() {
         return 1;
     }
     while (SEventProcess(&app)) {
-        STriangle(&app, {0.0f, 1.0f, 0.0f});
-        printf("HELLO");
+        STriangle(&app, blue);
+        //printf("HELLO");
     }
     SDisplayClose(&app);
 
