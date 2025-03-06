@@ -12,13 +12,14 @@
 #include <GL/gl.h>
 #endif
 
-void STriangle(SApplication *app, float color[3]) {
+void STriangle(SApplication *app, float color[3], float posX, float posY) {
     glClear(GL_COLOR_BUFFER_BIT);
     glBegin(GL_TRIANGLES);
         glColor3f(color[0], color[1], color[2]);
-        glVertex2f(-0.5f, -0.5f); 
-        glVertex2f(0.5f, -0.5f);  
-        glVertex2f(0.0f, 0.5f);   
+  
+        glVertex2f(-0.5f + posX, -0.5f + posY); 
+        glVertex2f(0.5f + posX, -0.5f + posY);  
+        glVertex2f(0.0f + posX, 0.5f + posY);   
     glEnd();
     
     #if defined(__linux__)
@@ -28,13 +29,15 @@ void STriangle(SApplication *app, float color[3]) {
     #endif
 }
 
-void SRectangle(SApplication *app, float color[3]) {
+
+void SRectangle(SApplication *app, float color[3], float posX, float posY) {
     glBegin(GL_QUADS);
         glColor3f(color[0], color[1], color[2]);
-        glVertex2f(-0.5f, -0.5f); 
-        glVertex2f(0.5f, -0.5f);  
-        glVertex2f(0.5f, 0.5f);   
-        glVertex2f(-0.5f, 0.5f);  
+      
+        glVertex2f(-0.5f + posX, -0.5f + posY); 
+        glVertex2f(0.5f + posX, -0.5f + posY);  
+        glVertex2f(0.5f + posX, 0.5f + posY);   
+        glVertex2f(-0.5f + posX, 0.5f + posY);  
     glEnd();
     
     #if defined(__linux__)
@@ -42,13 +45,21 @@ void SRectangle(SApplication *app, float color[3]) {
     #elif defined(_WIN32) || defined(_WIN64)
     SwapBuffers(app->hdc);
     #endif
+}
+
+
+void STriangle(SApplication *app, float color[3]) {
+    STriangle(app, color, 0.0f, 0.0f);
+}
+
+void SRectangle(SApplication *app, float color[3]) {
+    SRectangle(app, color, 0.0f, 0.0f);
 }
 
 void SCircle(SApplication *app, float *color) {
     //TODO: Add circle support.
     printf("I'm sorry! This feature is not implemented... Check back in updated versions.");
 }
-
 #elif defined(VULKAN_VERSION_1_0)
 #else 
 #endif //VULKAN
