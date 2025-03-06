@@ -3,6 +3,7 @@
 
 #if defined(GL_VERSION)
 #include <GL/gl.h>
+#include <GL/glx.h>
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <stdio.h>
@@ -29,7 +30,8 @@ void SRectangle(SApplication *app, float color[3]) {
         glVertex2f(0.5f, 0.5f);   
         glVertex2f(-0.5f, 0.5f);  
     glEnd();
-    glXSwapBuffers(app->display, app->window);
+
+    glxSwapBuffers(app->display, app->window);
 }
 
 void SCircle(SApplication *app, float *color) {
