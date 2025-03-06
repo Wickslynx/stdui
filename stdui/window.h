@@ -1,10 +1,26 @@
 // Global stuff declared here.
 #include <stdio.h>
+
+
+#if defined(__linux__)
+    #pragma comment(lib, "X11")
+    #pragma comment(lib, "GL")
+#elif defined(_WIN32) || defined(_WIN64)
+    #pragma comment(lib, "opengl32.lib")
+    #pragma comment(lib, "gdi32.lib")
+    #pragma comment(lib, "user32.lib")
+#endif
+
+
+
+
 #if defined(__linux__)
 // Linux implementation.
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <GL/gl.h>
+
+
 typedef struct {
     Display *display;
     int screen;
@@ -132,10 +148,10 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         return 0;
     }
     
-    // Get the device context
+
     app->hdc = GetDC(app->hwnd);
     
-    // Set pixel format for OpenGL
+
     PIXELFORMATDESCRIPTOR pfd = {
         sizeof(PIXELFORMATDESCRIPTOR),
         1,                              // Version
