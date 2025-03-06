@@ -15,7 +15,7 @@ set(PARENT_DIR ${CMAKE_SOURCE_DIR}/..)
 set(HEADERS
     ${PARENT_DIR}/stdui/widgets.h
     ${PARENT_DIR}/stdui/window.h
-    ${PARENT_DIR}/stdui/internal/utils.h
+    ${PARENT_DIR}/stdui/colors.h
     ${PARENT_DIR}/stdui/image.h
 )
 
