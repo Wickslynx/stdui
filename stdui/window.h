@@ -152,8 +152,6 @@ void SDisplayClose(SApplication *app) {
     XDestroyWindow(app->display, app->window);
     XCloseDisplay(app->display);
 }
-#endif
-
 
 #elif defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
