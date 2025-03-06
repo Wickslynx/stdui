@@ -15,18 +15,20 @@
 
 
 #if defined(__linux__)
-// Linux implementation.
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <GL/gl.h>
-
+#include <GL/glx.h>  
 
 typedef struct {
     Display *display;
     int screen;
     Window window;
     XEvent event;
+    GLXContext glx_context;  
+    Colormap colormap;       
 } SApplication;
+
 int SDisplayOpen(SApplication *app) {
     if (app == NULL) {
         return 0;
@@ -39,25 +41,77 @@ int SDisplayOpen(SApplication *app) {
     app->screen = DefaultScreen(app->display);
     return 1;
 }
+
 int SWindowCreate(SApplication *app, const char *title, int x, int y, int width, int height) {
     if (app == NULL) {
         return 0;
     }
-    app->window = XCreateSimpleWindow(
+    
+
+    static int visual_attribs[] = {
+        GLX_RGBA,
+        GLX_DEPTH_SIZE, 24,
+        GLX_DOUBLEBUFFER,
+        None
+    };
+    
+   
+    XVisualInfo *vi = glXChooseVisual(app->display, app->screen, visual_attribs);
+    if (vi == NULL) {
+        fprintf(stderr, "No appropriate visual found for OpenGL.\n");
+        return 0;
+    }
+    
+
+    app->colormap = XCreateColormap(app->display, 
+                                   RootWindow(app->display, app->screen),
+                                   vi->visual, AllocNone);
+    
+
+    XSetWindowAttributes swa;
+    swa.colormap = app->colormap;
+    swa.event_mask = ExposureMask | KeyPressMask;
+    
+
+    app->window = XCreateWindow(
         app->display,
         RootWindow(app->display, app->screen),
         x, y,
         width, height,
-        1,
-        BlackPixel(app->display, app->screen),
-        WhitePixel(app->display, app->screen)
+        0,                 // border width
+        vi->depth,         // depth from the visual
+        InputOutput,       // class
+        vi->visual,        // visual
+        CWColormap | CWEventMask, // value mask
+        &swa               // attributes
     );
+    
+
     XStoreName(app->display, app->window, title);
-    XSelectInput(app->display, app->window, ExposureMask | KeyPressMask);
+    
+
+    app->glx_context = glXCreateContext(app->display, vi, NULL, GL_TRUE);
+    if (app->glx_context == NULL) {
+        fprintf(stderr, "Failed to create GLX context.\n");
+        XFree(vi);
+        return 0;
+    }
+    
+    // Show the window
     XMapWindow(app->display, app->window);
+    
+    // Make the GLX context current
+    if (!glXMakeCurrent(app->display, app->window, app->glx_context)) {
+        fprintf(stderr, "Failed to make GLX context current.\n");
+        XFree(vi);
+        return 0;
+    }
+    
+    XFree(vi);
     XFlush(app->display);
     return 1;
 }
+
 int SEventProcess(SApplication *app) {
     if (app == NULL) {
         return 0;
@@ -77,13 +131,29 @@ int SEventProcess(SApplication *app) {
     }
     return 1;
 }
+
 void SDisplayClose(SApplication *app) {
     if (app == NULL) {
         return;
     }
+    
+ 
+    if (app->glx_context) {
+        glXMakeCurrent(app->display, None, NULL);
+        glXDestroyContext(app->display, app->glx_context);
+    }
+    
+
+    if (app->colormap) {
+        XFreeColormap(app->display, app->colormap);
+    }
+    
+
     XDestroyWindow(app->display, app->window);
     XCloseDisplay(app->display);
 }
+#endif
+
 
 #elif defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
