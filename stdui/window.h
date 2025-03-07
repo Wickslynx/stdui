@@ -99,6 +99,18 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     
     // Show the window
     XMapWindow(app->display, app->window);
+
+    glViewport(0, 0, 400, 300);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, 400, 300, 0, -1, 1); // Origin at top-left
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    
+    // Enable alpha blending
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     
     // Make the GLX context current
     if (!glXMakeCurrent(app->display, app->window, app->glx_context)) {
