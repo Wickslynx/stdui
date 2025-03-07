@@ -2,7 +2,9 @@
 #define WIDGETS_H
 
 #include <stdio.h>
+#include <math.h>
 #include "internal/layout.h"
+
 
 #if defined(GL_VERSION)
 #include <GL/gl.h>
@@ -13,57 +15,225 @@
 #elif defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #include <GL/gl.h>
+#elif defined(__APPLE__)
+#include <OpenGL/gl.h>
+#include <OpenGL/CGLCurrent.h>
 #endif
 
-void STriangle(SApplication *app, float color[3], float posX, float posY) {
-    glClear(GL_COLOR_BUFFER_BIT);
+// Common color definitions
+typedef struct {
+    float r, g, b, a;
+} SColor;
+
+// Common shape properties
+typedef struct {
+    float x, y;
+    float width, height;
+    float rotation;
+    SColor color;
+} SShapeProps;
+
+// Function to create a color
+static inline SColor SCreateColor(float r, float g, float b, float a) {
+    SColor color = {r, b, g, a};
+    return color;
+}
+
+// Function to create shape properties
+static inline SShapeProps SCreateShapeProps(float x, float y, float width, float height, float rotation, SColor color) {
+    SShapeProps props = {x, y, width, height, rotation, color};
+    return props;
+}
+
+// Buffer swap helper function
+static inline void SSwapBuffers(SApplication *app) {
+#if defined(__linux__)
+    glXSwapBuffers(app->display, app->window);
+#elif defined(_WIN32) || defined(_WIN64)
+    SwapBuffers(app->hdc);
+#elif defined(__APPLE__)
+    CGLFlushDrawable(CGLGetCurrentContext());
+#endif
+}
+
+// Drawing functions with consistent parameters
+void STriangle(SApplication *app, const SShapeProps *props);
+void SRectangle(SApplication *app, const SShapeProps *props);
+void SCircle(SApplication *app, const SShapeProps *props);
+void SPolygon(SApplication *app, const SShapeProps *props, const float *vertices, int vertexCount);
+
+// Implementation of drawing functions
+void STriangle(SApplication *app, const SShapeProps *props) {
+    glPushMatrix();
+    
+    // Apply transformations
+    glTranslatef(props->x, props->y, 0.0f);
+    glRotatef(props->rotation, 0.0f, 0.0f, 1.0f);
+    glScalef(props->width, props->height, 1.0f);
+    
+    // Set color with alpha
+    glColor4f(props->color.r, props->color.g, props->color.b, props->color.a);
+    
     glBegin(GL_TRIANGLES);
-        glColor3f(color[0], color[1], color[2]);
-  
-        glVertex2f(-0.5f + posX, -0.5f + posY); 
-        glVertex2f(0.5f + posX, -0.5f + posY);  
-        glVertex2f(0.0f + posX, 0.5f + posY);   
+        glVertex2f(-0.5f, -0.5f);
+        glVertex2f(0.5f, -0.5f);
+        glVertex2f(0.0f, 0.5f);
     glEnd();
     
-    #if defined(__linux__)
-    glXSwapBuffers(app->display, app->window);
-    #elif defined(_WIN32) || defined(_WIN64)
-    SwapBuffers(app->hdc);
-    #endif
+    glPopMatrix();
+    
+    SSwapBuffers(app);
 }
 
-
-void SRectangle(SApplication *app, float color[3], float posX, float posY) {
+void SRectangle(SApplication *app, const SShapeProps *props) {
+    glPushMatrix();
+    
+    // Apply transformations
+    glTranslatef(props->x, props->y, 0.0f);
+    glRotatef(props->rotation, 0.0f, 0.0f, 1.0f);
+    glScalef(props->width, props->height, 1.0f);
+    
+    // Set color with alpha
+    glColor4f(props->color.r, props->color.g, props->color.b, props->color.a);
+    
     glBegin(GL_QUADS);
-        glColor3f(color[0], color[1], color[2]);
-      
-        glVertex2f(-0.5f + posX, -0.5f + posY); 
-        glVertex2f(0.5f + posX, -0.5f + posY);  
-        glVertex2f(0.5f + posX, 0.5f + posY);   
-        glVertex2f(-0.5f + posX, 0.5f + posY);  
+        glVertex2f(-0.5f, -0.5f);
+        glVertex2f(0.5f, -0.5f);
+        glVertex2f(0.5f, 0.5f);
+        glVertex2f(-0.5f, 0.5f);
     glEnd();
     
-    #if defined(__linux__)
-    glXSwapBuffers(app->display, app->window);
-    #elif defined(_WIN32) || defined(_WIN64)
-    SwapBuffers(app->hdc);
-    #endif
+    glPopMatrix();
+    
+    SSwapBuffers(app);
+}
+
+void SCircle(SApplication *app, const SShapeProps *props) {
+    glPushMatrix();
+    
+    // Apply transformations
+    glTranslatef(props->x, props->y, 0.0f);
+    glRotatef(props->rotation, 0.0f, 0.0f, 1.0f);
+    glScalef(props->width, props->height, 1.0f);
+    
+    // Set color with alpha
+    glColor4f(props->color.r, props->color.g, props->color.b, props->color.a);
+    
+    // Draw circle using triangles
+    const int segments = 36;
+    const float angleIncrement = 2.0f * M_PI / segments;
+    
+    glBegin(GL_TRIANGLE_FAN);
+        glVertex2f(0.0f, 0.0f); // Center point
+        
+        for (int i = 0; i <= segments; i++) {
+            float angle = i * angleIncrement;
+            float x = 0.5f * cosf(angle);
+            float y = 0.5f * sinf(angle);
+            glVertex2f(x, y);
+        }
+    glEnd();
+    
+    glPopMatrix();
+    
+    SSwapBuffers(app);
+}
+
+void SPolygon(SApplication *app, const SShapeProps *props, const float *vertices, int vertexCount) {
+    if (vertexCount < 3 || vertices == NULL) {
+        fprintf(stderr, "Error: Invalid polygon data\n");
+        return;
+    }
+    
+    glPushMatrix();
+    
+    // Apply transformations
+    glTranslatef(props->x, props->y, 0.0f);
+    glRotatef(props->rotation, 0.0f, 0.0f, 1.0f);
+    glScalef(props->width, props->height, 1.0f);
+    
+    // Set color with alpha
+    glColor4f(props->color.r, props->color.g, props->color.b, props->color.a);
+    
+    glBegin(GL_POLYGON);
+        for (int i = 0; i < vertexCount * 2; i += 2) {
+            glVertex2f(vertices[i], vertices[i+1]);
+        }
+    glEnd();
+    
+    glPopMatrix();
+    
+    SSwapBuffers(app);
 }
 
 
-void STriangle(SApplication *app, float color[3]) {
-    STriangle(app, color, 0.0f, 0.0f);
+void SDrawTriangle(SApplication *app, float color[3], float posX, float posY) {
+    SColor c = {color[0], color[1], color[2], 1.0f};
+    SShapeProps props = {posX, posY, 1.0f, 1.0f, 0.0f, c};
+    STriangle(app, &props);
 }
 
-void SRectangle(SApplication *app, float color[3]) {
-    SRectangle(app, color, 0.0f, 0.0f);
+void SDrawRectangle(SApplication *app, float color[3], float posX, float posY) {
+    SColor c = {color[0], color[1], color[2], 1.0f};
+    SShapeProps props = {posX, posY, 1.0f, 1.0f, 0.0f, c};
+    SRectangle(app, &props);
 }
 
-void SCircle(SApplication *app, float *color) {
-    //TODO: Add circle support.
-    printf("I'm sorry! This feature is not implemented... Check back in updated versions.");
-}
 #elif defined(VULKAN_VERSION_1_0)
-#else 
-#endif //VULKAN
-#endif //WIDGETS_H
+
+#include <vulkan/vulkan.h>
+
+typedef struct {
+    float r, g, b, a;
+} SColor;
+
+typedef struct {
+    float x, y;
+    float width, height;
+    float rotation;
+    SColor color;
+} SShapeProps;
+
+void STriangle(SApplication *app, const SShapeProps *props) {
+    // TODO: Implement Vulkan rendering
+    printf("Vulkan triangle rendering not yet implemented\n");
+}
+
+void SRectangle(SApplication *app, const SShapeProps *props) {
+    // TODO: Implement Vulkan rendering
+    printf("Vulkan rectangle rendering not yet implemented\n");
+}
+
+void SCircle(SApplication *app, const SShapeProps *props) {
+    // TODO: Implement Vulkan rendering
+    printf("Vulkan circle rendering not yet implemented\n");
+}
+
+#else
+
+typedef struct {
+    float r, g, b, a;
+} SColor;
+
+typedef struct {
+    float x, y;
+    float width, height;
+    float rotation;
+    SColor color;
+} SShapeProps;
+
+void STriangle(SApplication *app, const SShapeProps *props) {
+    printf("No rendering backend available\n");
+}
+
+void SRectangle(SApplication *app, const SShapeProps *props) {
+    printf("No rendering backend available\n");
+}
+
+void SCircle(SApplication *app, const SShapeProps *props) {
+    printf("No rendering backend available\n");
+}
+
+#endif // Graphics API checks
+
+#endif // WIDGETS_H
