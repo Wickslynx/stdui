@@ -35,8 +35,13 @@ typedef struct {
 
 // Function to create a color
 static inline SColor SCreateColor(float r, float g, float b, float a) {
-    SColor color = {r, b, g, a};
+    SColor color = {r, g, b, a}; // Fixed the order: r->r, g->g, b->b
     return color;
+}
+
+// Function to create color from RGB array
+static inline SColor SCreateColorFromArray(float color[3], float alpha) {
+    return SCreateColor(color[0], color[1], color[2], alpha);
 }
 
 // Function to create shape properties
@@ -168,15 +173,21 @@ void SPolygon(SApplication *app, const SShapeProps *props, const float *vertices
 
 
 void SDrawTriangle(SApplication *app, float color[3], float posX, float posY) {
-    SColor c = {color[0], color[1], color[2], 1.0f};
+    SColor c = SCreateColorFromArray(color, 1.0f);
     SShapeProps props = {posX, posY, 1.0f, 1.0f, 0.0f, c};
     STriangle(app, &props);
 }
 
 void SDrawRectangle(SApplication *app, float color[3], float posX, float posY) {
-    SColor c = {color[0], color[1], color[2], 1.0f};
+    SColor c = SCreateColorFromArray(color, 1.0f);
     SShapeProps props = {posX, posY, 1.0f, 1.0f, 0.0f, c};
     SRectangle(app, &props);
+}
+
+void SDrawCircle(SApplication *app, float color[3], float posX, float posY) {
+    SColor c = SCreateColorFromArray(color, 1.0f);
+    SShapeProps props = {posX, posY, 1.0f, 1.0f, 0.0f, c};
+    SCircle(app, &props);
 }
 
 #elif defined(VULKAN_VERSION_1_0)
@@ -194,6 +205,17 @@ typedef struct {
     SColor color;
 } SShapeProps;
 
+// Function to create a color
+static inline SColor SCreateColor(float r, float g, float b, float a) {
+    SColor color = {r, g, b, a}; // Fixed order
+    return color;
+}
+
+// Function to create color from RGB array
+static inline SColor SCreateColorFromArray(float color[3], float alpha) {
+    return SCreateColor(color[0], color[1], color[2], alpha);
+}
+
 void STriangle(SApplication *app, const SShapeProps *props) {
     // TODO: Implement Vulkan rendering
     printf("Vulkan triangle rendering not yet implemented\n");
@@ -209,6 +231,24 @@ void SCircle(SApplication *app, const SShapeProps *props) {
     printf("Vulkan circle rendering not yet implemented\n");
 }
 
+void SDrawTriangle(SApplication *app, float color[3], float posX, float posY) {
+    SColor c = SCreateColorFromArray(color, 1.0f);
+    SShapeProps props = {posX, posY, 1.0f, 1.0f, 0.0f, c};
+    STriangle(app, &props);
+}
+
+void SDrawRectangle(SApplication *app, float color[3], float posX, float posY) {
+    SColor c = SCreateColorFromArray(color, 1.0f);
+    SShapeProps props = {posX, posY, 1.0f, 1.0f, 0.0f, c};
+    SRectangle(app, &props);
+}
+
+void SDrawCircle(SApplication *app, float color[3], float posX, float posY) {
+    SColor c = SCreateColorFromArray(color, 1.0f);
+    SShapeProps props = {posX, posY, 1.0f, 1.0f, 0.0f, c};
+    SCircle(app, &props);
+}
+
 #else
 
 typedef struct {
@@ -222,6 +262,17 @@ typedef struct {
     SColor color;
 } SShapeProps;
 
+// Function to create a color
+static inline SColor SCreateColor(float r, float g, float b, float a) {
+    SColor color = {r, g, b, a}; // Fixed order
+    return color;
+}
+
+// Function to create color from RGB array
+static inline SColor SCreateColorFromArray(float color[3], float alpha) {
+    return SCreateColor(color[0], color[1], color[2], alpha);
+}
+
 void STriangle(SApplication *app, const SShapeProps *props) {
     printf("No rendering backend available\n");
 }
@@ -232,6 +283,24 @@ void SRectangle(SApplication *app, const SShapeProps *props) {
 
 void SCircle(SApplication *app, const SShapeProps *props) {
     printf("No rendering backend available\n");
+}
+
+void SDrawTriangle(SApplication *app, float color[3], float posX, float posY) {
+    SColor c = SCreateColorFromArray(color, 1.0f);
+    SShapeProps props = {posX, posY, 1.0f, 1.0f, 0.0f, c};
+    STriangle(app, &props);
+}
+
+void SDrawRectangle(SApplication *app, float color[3], float posX, float posY) {
+    SColor c = SCreateColorFromArray(color, 1.0f);
+    SShapeProps props = {posX, posY, 1.0f, 1.0f, 0.0f, c};
+    SRectangle(app, &props);
+}
+
+void SDrawCircle(SApplication *app, float color[3], float posX, float posY) {
+    SColor c = SCreateColorFromArray(color, 1.0f);
+    SShapeProps props = {posX, posY, 1.0f, 1.0f, 0.0f, c};
+    SCircle(app, &props);
 }
 
 #endif // Graphics API checks
