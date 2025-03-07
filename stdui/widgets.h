@@ -91,8 +91,7 @@ void STriangle(SApplication *app, const SShapeProps *props) {
     glEnd();
     
     glPopMatrix();
-    
-    SSwapBuffers(app);
+
 }
 
 void SRectangle(SApplication *app, const SShapeProps *props) {
@@ -115,7 +114,6 @@ void SRectangle(SApplication *app, const SShapeProps *props) {
     
     glPopMatrix();
     
-    SSwapBuffers(app);
 }
 
 void SCircle(SApplication *app, const SShapeProps *props) {
@@ -146,7 +144,6 @@ void SCircle(SApplication *app, const SShapeProps *props) {
     
     glPopMatrix();
     
-    SSwapBuffers(app);
 }
 
 void SPolygon(SApplication *app, const SShapeProps *props, const float *vertices, int vertexCount) {
@@ -173,7 +170,6 @@ void SPolygon(SApplication *app, const SShapeProps *props, const float *vertices
     
     glPopMatrix();
     
-    SSwapBuffers(app);
 }
 
 void SDrawTriangle(SApplication *app, float color[3], float posX, float posY) {
