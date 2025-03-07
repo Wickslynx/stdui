@@ -12,9 +12,13 @@ int main() {
         SDisplayClose(&app);
         return 1;
     }
-    while (SEventProcess(&app)) {
-        STriangle(&app, blue);
-        //printf("HELLO");
+    while (SEventProcess(&app)) { //MAIN LOOP
+        
+        SDrawTriangle(&app, blue, 100.0f, 100.0f);    
+        SDrawRectangle(&app, red, 200.0f, 100.0f);    
+        SDrawCircle(&app, green, 300.0f, 100.0f);
+
+        SSwapBuffers(&app);
     }
     SDisplayClose(&app);
 
