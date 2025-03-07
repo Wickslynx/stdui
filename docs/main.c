@@ -14,10 +14,12 @@ int main() {
     }
     while (SEventProcess(&app)) { //MAIN LOOP
         
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
         SDrawTriangle(&app, blue, 100.0f, 100.0f);    
         SDrawRectangle(&app, red, 200.0f, 100.0f);    
         SDrawCircle(&app, green, 300.0f, 100.0f);
-
+    
         SSwapBuffers(&app);
     }
     SDisplayClose(&app);
