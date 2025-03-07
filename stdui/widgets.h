@@ -1,6 +1,9 @@
 #ifndef WIDGETS_H
 #define WIDGETS_H
+
 #include <stdio.h>
+#include "internal/layout.h"
+
 #if defined(GL_VERSION)
 #include <GL/gl.h>
 #if defined(__linux__)
