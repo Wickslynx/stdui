@@ -35,7 +35,7 @@ typedef struct {
 
 // Function to create a color
 static inline SColor SCreateColor(float r, float g, float b, float a) {
-    SColor color = {r, g, b, a}; // Fixed the order: r->r, g->g, b->b
+    SColor color = {r, g, b, a}; 
     return color;
 }
 
@@ -50,7 +50,7 @@ static inline SShapeProps SCreateShapeProps(float x, float y, float width, float
     return props;
 }
 
-// Buffer swap helper function
+
 static inline void SSwapBuffers(SApplication *app) {
 #if defined(__linux__)
     glXSwapBuffers(app->display, app->window);
