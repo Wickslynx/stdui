@@ -172,21 +172,21 @@ void SPolygon(SApplication *app, const SShapeProps *props, const float *vertices
     
 }
 
-void SDrawTriangle(SApplication *app, float color[3], float posX, float posY) {
+void SDrawTriangle(SApplication *app, float color[3], float posX, float posY, float size) {
     SColor c = SCreateColorFromArray(color, 1.0f);
-    SShapeProps props = {posX, posY, 1.0f, 1.0f, 0.0f, c};
+    SShapeProps props = {posX, posY, size, size, 0.0f, c};
     STriangle(app, &props);
 }
 
-void SDrawRectangle(SApplication *app, float color[3], float posX, float posY) {
+void SDrawRectangle(SApplication *app, float color[3], float posX, float posY, float width, float height) {
     SColor c = SCreateColorFromArray(color, 1.0f);
-    SShapeProps props = {posX, posY, 1.0f, 1.0f, 0.0f, c};
+    SShapeProps props = {posX, posY, width, height, 0.0f, c};
     SRectangle(app, &props);
 }
 
-void SDrawCircle(SApplication *app, float color[3], float posX, float posY) {
+void SDrawCircle(SApplication *app, float color[3], float posX, float posY, float radius) {
     SColor c = SCreateColorFromArray(color, 1.0f);
-    SShapeProps props = {posX, posY, 1.0f, 1.0f, 0.0f, c};
+    SShapeProps props = {posX, posY, radius*2, radius*2, 0.0f, c};
     SCircle(app, &props);
 }
 
