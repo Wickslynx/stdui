@@ -30,9 +30,9 @@ int main() {
         SDrawToggle(&app, &checkbox);
         
         // Handle input
-        SUpdateSlider(&app, &slider, mouseX, mouseY, mouseDown);
-        SUpdateButton(&app, &button, mouseX, mouseY, mouseDown);
-        SUpdateToggle(&app, &checkbox, mouseX, mouseY, mouseDown);
+        SUpdateSlider(&app, &slider, SMouseState.mouseX, SMouseState.mouseY, SMouseState.mouseDown);
+        SUpdateButton(&app, &button, SMouseState.mouseX, SMouseState.mouseY, SMouseState.mouseDown);
+        SUpdateToggle(&app, &checkbox, SMouseState.mouseX, SMouseState.mouseY, SMouseState.mouseDown);
         
         // End frame
         SSwapBuffers(&app);
