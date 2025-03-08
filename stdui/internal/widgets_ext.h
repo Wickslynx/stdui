@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <math.h>
+#include "widgets.h"
 
 // Widget state structure
 typedef struct {
