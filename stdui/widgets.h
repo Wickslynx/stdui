@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "internal/layout.h"
+#include "internal/widgets_ext.h"
 
 
 #if defined(GL_VERSION)
