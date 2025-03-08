@@ -659,7 +659,7 @@ void SDrawButton(SApplication* app, SButton* button) {
     button->base.color = originalColor;
     
     // TODO: Draw text (requires text rendering function)
-    // For now, we're just rendering the button background
+    
 }
 
 // Draw a toggle/checkbox widget
