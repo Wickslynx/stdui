@@ -173,8 +173,8 @@ int SEventProcess(SApplication *app) {
                 }
                 break;
             case MotionNotify:
-                mouseState->mouseX = (float)app->event.xmotion.x;
-                mouseState->mouseY = (float)app->event.xmotion.y;
+                app->mouseX = (float)app->event.xmotion.x;
+                app->mouseY = (float)app->event.xmotion.y;
                 break;
         }
     }
