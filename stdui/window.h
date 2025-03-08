@@ -26,14 +26,12 @@ typedef struct {
     Window window;
     XEvent event;
     GLXContext glx_context;  
-    Colormap colormap;       
-} SApplication;
-
-typedef struct {
+    Colormap colormap;
     float mouseX;
     float mouseY;
     int mouseDown;
-} SMouseState;
+} SApplication;
+
 
 int SDisplayOpen(SApplication *app) {
     if (app == NULL) {
@@ -121,7 +119,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     return 1;
 }
 
-void SGetMouseState(SApplication *app, SMouseState *mouseState) {
+void SGetMouseState(SApplication *app) {
     if (app == NULL || mouseState == NULL) {
         return;
     }
@@ -138,15 +136,15 @@ void SGetMouseState(SApplication *app, SMouseState *mouseState) {
                  &mask_return);
     
     // Update mouse position
-    mouseState->mouseX = (float)win_x_return;
-    mouseState->mouseY = (float)win_y_return;
+    app->mouseX = (float)win_x_return;
+    app->mouseY = (float)win_y_return;
     
     // Update mouse button state
-    mouseState->mouseDown = (mask_return & Button1Mask) ? 1 : 0;
+    app->mouseDown = (mask_return & Button1Mask) ? 1 : 0;
 }
 
 
-int SEventProcess(SApplication *app, SMouseState *mouseState) {
+int SEventProcess(SApplication *app) {
     if (app == NULL) {
         return 0;
     }
@@ -164,14 +162,14 @@ int SEventProcess(SApplication *app, SMouseState *mouseState) {
                 break;
             case ButtonPress:
                 if (app->event.xbutton.button == Button1) {
-                    mouseState->mouseDown = 1;
-                    mouseState->mouseX = (float)app->event.xbutton.x;
-                    mouseState->mouseY = (float)app->event.xbutton.y;
+                    app->mouseDown = 1;
+                    app->mouseX = (float)app->event.xbutton.x;
+                    app->mouseY = (float)app->event.xbutton.y;
                 }
                 break;
             case ButtonRelease:
                 if (app->event.xbutton.button == Button1) {
-                    mouseState->mouseDown = 0;
+                    app->mouseDown = 0;
                 }
                 break;
             case MotionNotify:
