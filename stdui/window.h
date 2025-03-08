@@ -98,21 +98,12 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     }
     
     // Show the window
-    XMapWindow(app->display, app->window);
+    XMapWindow(app->display, app->window);    
 
-    glViewport(0, 0, 400, 300);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, 400, 300, 0, -1, 1); // Origin at top-left
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    
-    // Enable alpha blending
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    
-    // Make the GLX context current
+
     if (!glXMakeCurrent(app->display, app->window, app->glx_context)) {
         fprintf(stderr, "Failed to make GLX context current.\n");
         XFree(vi);
@@ -164,6 +155,37 @@ void SDisplayClose(SApplication *app) {
     XDestroyWindow(app->display, app->window);
     XCloseDisplay(app->display);
 }
+
+static inline void SClearScreen(SApplication *app, float r, float g, float b) {
+    glClearColor(r, g, b, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    // Reset model-view matrix
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+
+static inline void SBeginFrame(SApplication *app) {
+
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+
+static inline void SUpdateViewport(SApplication *app, int width, int height) {
+    glViewport(0, 0, width, height);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, width, height, 0, -1, 1); // Origin at top-left
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+
 
 #elif defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
