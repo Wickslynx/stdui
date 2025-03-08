@@ -36,8 +36,6 @@ typedef struct {
 #endif
 
 
-float mouseX = 0.0f, mouseY = 0.0f;
-bool mouseDown = false;
 
 // Function to create a color
 static inline SColor SCreateColor(float r, float g, float b, float a) {
