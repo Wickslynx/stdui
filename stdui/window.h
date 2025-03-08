@@ -120,7 +120,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
 }
 
 void SGetMouseState(SApplication *app) {
-    if (app == NULL || mouseState == NULL) {
+    if (app == NULL) {
         return;
     }
     
