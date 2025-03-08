@@ -18,6 +18,7 @@ set(HEADERS
     ${PARENT_DIR}/stdui/colors.h
     ${PARENT_DIR}/stdui/image.h
     ${PARENT_DIR}/stdui/internal/layout.h
+    ${PARENT_DIR}/stdui/internal/widgets_ext.h
 )
 
 # List of sources
