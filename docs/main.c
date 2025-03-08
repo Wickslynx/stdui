@@ -21,9 +21,9 @@ int main() {
         
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        SDrawTriangle(&app, blue, 100.0f, 100.0f);    
-        SDrawRectangle(&app, red, 200.0f, 100.0f);    
-        SDrawCircle(&app, green, 300.0f, 100.0f);
+        SDrawTriangleEx(&app, blue, 100.0f, 150.0f, 50.0f);   
+        SDrawRectangleEx(&app, red, 200.0f, 150.0f, 40.0f, 40.0f);  
+        SDrawCircleEx(&app, green, 300.0f, 150.0f, 25.0f); 
     
         SSwapBuffers(&app);
     }
