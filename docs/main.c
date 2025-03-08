@@ -15,19 +15,28 @@ int main() {
 
     SUpdateViewport(&app, 400, 300);
     
-    while (SEventProcess(&app)) { //MAIN LOOP
-
-        SBeginFrame(&app);
-        
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        SDrawTriangle(&app, blue, 100.0f, 150.0f, 50.0f);   
-        SDrawRectangle(&app, red, 200.0f, 150.0f, 40.0f, 40.0f);  
-        SDrawCircle(&app, green, 300.0f, 150.0f, 25.0f); 
+    SSlider slider = SCreateSlider(200, 50, 150, 20, 0, 100, 50);
+    SButton button = SCreateButton(200, 100, 100, 30, "Click Me");
+    SToggle checkbox = SCreateToggle(200, 150, 20, 20, "Enable Feature", false);
     
+    // Main loop
+    while (SEventProcess(&app)) {
+        // Begin frame
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        
+        // Draw widgets
+        SDrawSlider(&app, &slider);
+        SDrawButton(&app, &button);
+        SDrawToggle(&app, &checkbox);
+        
+        // Handle input
+        SUpdateSlider(&app, &slider, mouseX, mouseY, mouseDown);
+        SUpdateButton(&app, &button, mouseX, mouseY, mouseDown);
+        SUpdateToggle(&app, &checkbox, mouseX, mouseY, mouseDown);
+        
+        // End frame
         SSwapBuffers(&app);
     }
-    SDisplayClose(&app);
 
     return 0;
 }
