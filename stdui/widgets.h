@@ -75,8 +75,8 @@ void SPolygon(SApplication *app, const SShapeProps *props, const float *vertices
 
 // Helper functions for direct color array usage
 void SDrawTriangle(SApplication *app, float color[3], float posX, float posY, float size);
-void SDrawRectangle(SApplication *app, float color[3], float posX, float posY, float size);
-void SDrawCircle(SApplication *app, float color[3], float posX, float posY, float size);
+void SDrawRectangle(SApplication *app, float color[3], float posX, float posY, float width, float height);
+void SDrawCircle(SApplication *app, float color[3], float posX, float posY, float radius);
 
 
 void STriangle(SApplication *app, const SShapeProps *props) {
