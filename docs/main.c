@@ -23,7 +23,7 @@ int main() {
     while (SEventProcess(&app)) {
         // Begin frame
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        
+        SGetMouseState(&app);
         // Draw widgets
         SDrawSlider(&app, &slider);
         SDrawButton(&app, &button);
