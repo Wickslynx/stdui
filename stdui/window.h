@@ -29,6 +29,12 @@ typedef struct {
     Colormap colormap;       
 } SApplication;
 
+typedef struct {
+    float mouseX;
+    float mouseY;
+    int mouseDown;
+} SMouseState;
+
 int SDisplayOpen(SApplication *app) {
     if (app == NULL) {
         return 0;
