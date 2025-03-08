@@ -33,6 +33,11 @@ int main() {
         SUpdateSlider(&app, &slider, app.mouseX, app.mouseY, app.mouseDown);
         SUpdateButton(&app, &button, app.mouseX, app.mouseY, app.mouseDown);
         SUpdateToggle(&app, &checkbox, app.mouseX, app.mouseY, app.mouseDown);
+
+
+        SDrawTriangle(&app, blue, 100.0f, 150.0f, 50.0f);   
+        SDrawRectangle(&app, red, 200.0f, 150.0f, 40.0f, 40.0f);  
+        SDrawCircle(&app, green, 300.0f, 150.0f, 25.0f); 
         
         // End frame
         SSwapBuffers(&app);
