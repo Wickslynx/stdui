@@ -20,12 +20,12 @@
 #include <OpenGL/CGLCurrent.h>
 #endif
 
-// Common color definitions
+
 typedef struct {
     float r, g, b, a;
 } SColor;
 
-// Common shape properties
+
 typedef struct {
     float x, y;
     float width, height;
@@ -61,7 +61,7 @@ static inline void SSwapBuffers(SApplication *app) {
 #endif
 }
 
-// Drawing functions with consistent parameters
+// Drawing functions 
 void STriangle(SApplication *app, const SShapeProps *props);
 void SRectangle(SApplication *app, const SShapeProps *props);
 void SCircle(SApplication *app, const SShapeProps *props);
@@ -72,7 +72,7 @@ void SDrawTriangle(SApplication *app, float color[3], float posX, float posY, fl
 void SDrawRectangle(SApplication *app, float color[3], float posX, float posY, float size);
 void SDrawCircle(SApplication *app, float color[3], float posX, float posY, float size);
 
-// Implementation of drawing functions
+
 void STriangle(SApplication *app, const SShapeProps *props) {
     glPushMatrix();
     
@@ -127,7 +127,7 @@ void SCircle(SApplication *app, const SShapeProps *props) {
     // Set color with alpha
     glColor4f(props->color.r, props->color.g, props->color.b, props->color.a);
     
-    // Draw circle using triangles
+    // Draw circle using triangles (Who made this up? This is stupid.)
     const int segments = 36;
     const float angleIncrement = 2.0f * M_PI / segments;
     
@@ -207,7 +207,7 @@ typedef struct {
 
 // Function to create a color
 static inline SColor SCreateColor(float r, float g, float b, float a) {
-    SColor color = {r, g, b, a}; // Fixed order
+    SColor color = {r, g, b, a}; 
     return color;
 }
 
@@ -264,7 +264,7 @@ typedef struct {
 
 // Function to create a color
 static inline SColor SCreateColor(float r, float g, float b, float a) {
-    SColor color = {r, g, b, a}; // Fixed order
+    SColor color = {r, g, b, a}; 
     return color;
 }
 
