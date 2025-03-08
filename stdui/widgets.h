@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
+#include <stdbool.h>
 #include "internal/layout.h"
 
 
