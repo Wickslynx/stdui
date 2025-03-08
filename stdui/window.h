@@ -115,10 +115,36 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     return 1;
 }
 
-int SEventProcess(SApplication *app) {
+void SGetMouseState(SApplication *app, SMouseState *mouseState) {
+    if (app == NULL || mouseState == NULL) {
+        return;
+    }
+    
+    Window root_return, child_return;
+    int root_x_return, root_y_return;
+    int win_x_return, win_y_return;
+    unsigned int mask_return;
+    
+    XQueryPointer(app->display, app->window, 
+                 &root_return, &child_return,
+                 &root_x_return, &root_y_return,
+                 &win_x_return, &win_y_return,
+                 &mask_return);
+    
+    // Update mouse position
+    mouseState->mouseX = (float)win_x_return;
+    mouseState->mouseY = (float)win_y_return;
+    
+    // Update mouse button state
+    mouseState->mouseDown = (mask_return & Button1Mask) ? 1 : 0;
+}
+
+
+int SEventProcess(SApplication *app, SMouseState *mouseState) {
     if (app == NULL) {
         return 0;
     }
+    
     if (XPending(app->display) > 0) {
         XNextEvent(app->display, &app->event);
         switch (app->event.type) {
@@ -130,10 +156,28 @@ int SEventProcess(SApplication *app) {
                     return 0;
                 }
                 break;
+            case ButtonPress:
+                if (app->event.xbutton.button == Button1) {
+                    mouseState->mouseDown = 1;
+                    mouseState->mouseX = (float)app->event.xbutton.x;
+                    mouseState->mouseY = (float)app->event.xbutton.y;
+                }
+                break;
+            case ButtonRelease:
+                if (app->event.xbutton.button == Button1) {
+                    mouseState->mouseDown = 0;
+                }
+                break;
+            case MotionNotify:
+                mouseState->mouseX = (float)app->event.xmotion.x;
+                mouseState->mouseY = (float)app->event.xmotion.y;
+                break;
         }
     }
+    
     return 1;
 }
+
 
 void SDisplayClose(SApplication *app) {
     if (app == NULL) {
