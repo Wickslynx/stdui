@@ -12,7 +12,12 @@ int main() {
         SDisplayClose(&app);
         return 1;
     }
+
+    SUpdateViewport(&app, 400, 300);
+    
     while (SEventProcess(&app)) { //MAIN LOOP
+
+        SBeginFrame(&app);
         
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
