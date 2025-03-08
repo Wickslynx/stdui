@@ -6,6 +6,18 @@
 #include "internal/layout.h"
 #include "internal/widgets_ext.h"
 
+typedef struct {
+    float r, g, b, a;
+} SColor;
+
+
+typedef struct {
+    float x, y;
+    float width, height;
+    float rotation;
+    SColor color;
+} SShapeProps;
+
 
 #if defined(GL_VERSION)
 #include <GL/gl.h>
@@ -21,18 +33,6 @@
 #include <OpenGL/CGLCurrent.h>
 #endif
 
-
-typedef struct {
-    float r, g, b, a;
-} SColor;
-
-
-typedef struct {
-    float x, y;
-    float width, height;
-    float rotation;
-    SColor color;
-} SShapeProps;
 
 float mouseX = 0.0f, mouseY = 0.0f;
 bool mouseDown = false;
