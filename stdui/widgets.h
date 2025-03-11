@@ -794,6 +794,7 @@ STextField SCreateTextField(float x, float y, float width, float height, char* b
     return textField;
 }
 
+
 // Draw a slider widget
 void SDrawSlider(SApplication* app, SSlider* slider) {
     // Draw the track
@@ -915,7 +916,6 @@ void SDrawMenuBar(SApplication* app, SMenuBar* menuBar) {
                         dropdownShape.color
                     };
                     
-                    // Highlight hovered subitem (would need additional state tracking)
                     SRectangle(app, &subItemShape);
                     
                     // TODO: Draw submenu text
@@ -925,24 +925,6 @@ void SDrawMenuBar(SApplication* app, SMenuBar* menuBar) {
     }
 }
 
-// Draw a progress bar widget
-void SDrawProgressBar(SApplication* app, SProgressBar* progressBar) {
-    // Draw the background
-    SRectangle(app, &progressBar->base);
-    
-    // Draw the fill
-    SRectangle(app, &progressBar->fill);
-    
-    // TODO: Draw percentage text if showText is true (requires text rendering)
-}
-
-// Draw a text field widget
-void SDrawTextField(SApplication* app, STextField* textField) {
-    // Draw the text field background
-    SRectangle(app, &textField->base);
-    
-    // TODO: Draw text and cursor (requires text rendering function)
-}
 
 // Update a slider widget
 bool SUpdateSlider(SApplication* app, SSlider* slider, float mouseX, float mouseY, bool mouseDown) {
