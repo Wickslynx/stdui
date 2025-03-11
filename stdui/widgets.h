@@ -120,6 +120,11 @@ void SRectangle(SApplication *app, const SShapeProps *props) {
     
 }
 
+GLuint fontTexture;
+GLuint textVAO, textVBO;
+GLuint textShader;
+
+
 void SCircle(SApplication *app, const SShapeProps *props) {
     glPushMatrix();
     
@@ -294,6 +299,171 @@ void SDrawCircle(SApplication *app, float color[3], float posX, float posY, floa
     SColor c = SCreateColorFromArray(color, 1.0f);
     SShapeProps props = {posX, posY, radius*2, radius*2, 0.0f, c};
     SCircle(app, &props);
+}
+
+
+// Generate font texture from embedded bitmap data
+void generateFontTexture() {
+    // Create a texture with all font characters (8x8 pixels each, 16x6 grid)
+    const int fontTexWidth = 128;  // 16 chars per row, 8 pixels each
+    const int fontTexHeight = 48;  // 6 rows, 8 pixels each
+    
+    // Create empty texture data (all black)
+    unsigned char* textureData = new unsigned char[fontTexWidth * fontTexHeight];
+    memset(textureData, 0, fontTexWidth * fontTexHeight);
+    
+    // Fill in the texture data with font bitmap
+    for (int charIndex = 0; charIndex < 96; charIndex++) {
+        int gridX = (charIndex % 16) * 8;
+        int gridY = (charIndex / 16) * 8;
+        
+        // Copy character bitmap to texture
+        for (int x = 0; x < 8; x++) {
+            unsigned char column = fontData[charIndex][x];
+            for (int y = 0; y < 8; y++) {
+                if (column & (1 << y)) {
+                    int texX = gridX + x;
+                    int texY = gridY + y;
+                    textureData[texY * fontTexWidth + texX] = 255; // White pixel
+                }
+            }
+        }
+    }
+    
+    // Generate OpenGL texture
+    glGenTextures(1, &fontTexture);
+    glBindTexture(GL_TEXTURE_2D, fontTexture);
+    
+    // Set texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    
+    // Upload texture
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, fontTexWidth, fontTexHeight, 0, GL_RED, GL_UNSIGNED_BYTE, textureData);
+    
+    // Clean up
+    delete[] textureData;
+}
+
+
+
+bool initText() {
+    generateFontTexture();
+    
+    glGenVertexArrays(1, &textVAO);
+    glGenBuffers(1, &textVBO);
+    glBindVertexArray(textVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+    
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+    
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    
+
+    const char* vertexSource = 
+        "#version 330 core\n"
+        "layout (location = 0) in vec4 vertex;\n"
+        "out vec2 TexCoords;\n"
+        "uniform mat4 projection;\n"
+        "void main() {\n"
+        "   gl_Position = projection * vec4(vertex.xy, 0.0, 1.0);\n"
+        "   TexCoords = vertex.zw;\n"
+        "}\0";
+    
+    const char* fragmentSource = 
+        "#version 330 core\n"
+        "in vec2 TexCoords;\n"
+        "out vec4 color;\n"
+        "uniform sampler2D text;\n"
+        "uniform vec3 textColor;\n"
+        "void main() {\n"
+        "   float alpha = texture(text, TexCoords).r;\n"
+        "   color = vec4(textColor, alpha);\n"
+        "}\0";
+    
+    GLuint vertex = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertex, 1, &vertexSource, NULL);
+    glCompileShader(vertex);
+    
+
+    GLuint fragment = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragment, 1, &fragmentSource, NULL);
+    glCompileShader(fragment);
+    
+
+    textShader = glCreateProgram();
+    glAttachShader(textShader, vertex);
+    glAttachShader(textShader, fragment);
+    glLinkProgram(textShader);
+    
+    // Clean up
+    glDeleteShader(vertex);
+    glDeleteShader(fragment);
+    
+    return true;
+}
+
+
+void SDrawText(const char* text, float x, float y, float scale, float r, float g, float b) {
+
+    //Why was this so complicated i had to use Claude for this one lol.
+    
+    glUseProgram(textShader);
+    glUniform3f(glGetUniformLocation(textShader, "textColor"), r, g, b);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, fontTexture);
+    
+
+    glBindVertexArray(textVAO);
+    
+
+    float xpos = x;
+    while (*text) {
+        char c = *text++;
+        
+        if (c < 32 || c > 127) {
+            xpos += 8 * scale;
+            continue;
+        }
+        
+    
+        int charIndex = c - 32;
+        float s = (charIndex % 16) * 8.0f / 128.0f;
+        float t = (charIndex / 16) * 8.0f / 48.0f;
+        
+        float w = 8 * scale;
+        float h = 8 * scale;
+    
+        float vertices[6][4] = {
+            { xpos,     y + h,   s,            t            },
+            { xpos,     y,       s,            t + 8.0f/48.0f },
+            { xpos + w, y,       s + 8.0f/128.0f, t + 8.0f/48.0f },
+            
+            { xpos,     y + h,   s,            t            },
+            { xpos + w, y,       s + 8.0f/128.0f, t + 8.0f/48.0f },
+            { xpos + w, y + h,   s + 8.0f/128.0f, t            }
+        };
+        
+
+        glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        
+        xpos += w;
+    }
+    
+    // Unbind
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 
