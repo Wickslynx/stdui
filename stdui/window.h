@@ -241,11 +241,8 @@ static inline int SGetCurrentWindowHeight(Display *display, Window window) {
 
 static inline void SBeginFrame(SApplication *app) {
     SUpdateViewport(&app, SGetCurrentWindowHeight(app->display, app->window), SGetCurrentWindowWidth(app->display, app->window));
-    if (SGetMouseState(&app) == NULL) {
-        printf("WARNING: Unable to find pointer... ");
-    } 
-   
-    
+    SGetMouseState(&app) 
+        
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
