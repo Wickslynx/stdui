@@ -213,9 +213,6 @@ static inline void SClearScreen(SApplication *app, float r, float g, float b) {
     glLoadIdentity();
 }
 
-#include <X11/Xlib.h>
-#include <stdio.h>
-
 
 static inline int SGetCurrentWindowWidth(Display *display, Window window) {
     int x, y; //Unused right now.        
@@ -244,6 +241,7 @@ static inline int SGetCurrentWindowHeight(Display *display, Window window) {
 
 static inline void SBeginFrame(SApplication *app) {
     SUpdateViewport(&app, SGetCurrentWindowHeight(app->display, app->window), SGetCurrentWindowWidth(app->display, app->window));
+    SGetMouseState(&app);
     
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
