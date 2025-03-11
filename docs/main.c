@@ -13,7 +13,7 @@ int main() {
         return 1;
     }
 
-    SUpdateViewport(&app, 400, 300);
+ 
     
     SSlider slider = SCreateSlider(200, 50, 150, 20, 0, 100, 50);
     SButton button = SCreateButton(200, 100, 100, 30, "Click Me");
@@ -22,8 +22,8 @@ int main() {
     // Main loop
     while (SEventProcess(&app)) {
         // Begin frame
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        SGetMouseState(&app);
+        SBeginFrame(&app);
+        
         // Draw widgets
         SDrawSlider(&app, &slider);
         SDrawButton(&app, &button);
