@@ -3,11 +3,13 @@
 #include <stdui/colors.h>
 
 int main() {
+
     SApplication app;
 
     if (!SDisplayOpen(&app)) {
         return 1;
     }
+
     if (!SWindowCreate(&app, "My Window", 100, 100, 400, 300)) {
         SDisplayClose(&app);
         return 1;
@@ -19,6 +21,7 @@ int main() {
     SButton button = SCreateButton(200, 100, 100, 30, "Click Me");
     SToggle checkbox = SCreateToggle(200, 150, 20, 20, "Enable Feature", false);
     
+
     // Main loop
     while (SEventProcess(&app)) {
         // Begin frame

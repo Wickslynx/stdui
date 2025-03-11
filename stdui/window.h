@@ -39,7 +39,7 @@ int SDisplayOpen(SApplication *app) {
     }
     app->display = XOpenDisplay(NULL);
     if (app->display == NULL) {
-        fprintf(stderr, "Unable to open X11 display.\n");
+        fprintf(stderr, "ERROR: Unable to open X11 display.\n");
         return 0;
     }
     app->screen = DefaultScreen(app->display);
@@ -62,7 +62,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
    
     XVisualInfo *vi = glXChooseVisual(app->display, app->screen, visual_attribs);
     if (vi == NULL) {
-        fprintf(stderr, "No appropriate visual found for OpenGL.\n");
+        fprintf(stderr, "ERROR: No appropriate visual found for OpenGL.\n");
         return 0;
     }
     
@@ -96,7 +96,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
 
     app->glx_context = glXCreateContext(app->display, vi, NULL, GL_TRUE);
     if (app->glx_context == NULL) {
-        fprintf(stderr, "Failed to create GLX context.\n");
+        fprintf(stderr, "ERROR: Failed to create GLX context.\n");
         XFree(vi);
         return 0;
     }
@@ -109,7 +109,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
 
 
     if (!glXMakeCurrent(app->display, app->window, app->glx_context)) {
-        fprintf(stderr, "Failed to make GLX context current.\n");
+        fprintf(stderr, "ERROR: Failed to make GLX context current.\n");
         XFree(vi);
         return 0;
     }
@@ -119,7 +119,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     return 1;
 }
 
-void SGetMouseState(SApplication *app) {
+int SGetMouseState(SApplication *app) {
     if (app == NULL) {
         return;
     }
@@ -241,7 +241,10 @@ static inline int SGetCurrentWindowHeight(Display *display, Window window) {
 
 static inline void SBeginFrame(SApplication *app) {
     SUpdateViewport(&app, SGetCurrentWindowHeight(app->display, app->window), SGetCurrentWindowWidth(app->display, app->window));
-    SGetMouseState(&app);
+    if (SGetMouseState(&app) == NULL) {
+        printf("WARNING: Unable to find pointer... ");
+    } 
+   
     
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -252,7 +255,7 @@ static inline void SBeginFrame(SApplication *app) {
 
 
 
-static inline void SUpdateViewport(SApplication *app, int width, int height) {
+inline void SUpdateViewport(SApplication *app, int width, int height) {
     glViewport(0, 0, width, height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
