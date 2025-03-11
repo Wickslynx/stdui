@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "internal/layout.h"
+#include "internal/font.h"
 
 
 typedef struct {
@@ -309,7 +310,7 @@ void generateFontTexture() {
     const int fontTexHeight = 48;  // 6 rows, 8 pixels each
     
     // Create empty texture data (all black)
-    unsigned char* textureData = new unsigned char[fontTexWidth * fontTexHeight];
+    unsigned char* textureData = (unsigned char*)malloc(fontTexWidth * fontTexHeight);
     memset(textureData, 0, fontTexWidth * fontTexHeight);
     
     // Fill in the texture data with font bitmap
@@ -329,6 +330,7 @@ void generateFontTexture() {
             }
         }
     }
+
     
     // Generate OpenGL texture
     glGenTextures(1, &fontTexture);
@@ -344,7 +346,7 @@ void generateFontTexture() {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, fontTexWidth, fontTexHeight, 0, GL_RED, GL_UNSIGNED_BYTE, textureData);
     
     // Clean up
-    delete[] textureData;
+    free(textureData);
 }
 
 
