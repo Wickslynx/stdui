@@ -441,7 +441,7 @@ bool initText() {
 }
 
 
-void SDrawText(SApplication app, const char* text, float x, float y, float scale, float r, float g, float b) { //Why was this so anoying to make.
+void SDrawText(SApplication *app, const char* text, float x, float y, float scale, float r, float g, float b) { //Why was this so anoying to make.
     // Save current shader program
     GLint prevProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &prevProgram);
