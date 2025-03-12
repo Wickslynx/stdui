@@ -9,13 +9,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "internal/stb_image.h"
 
-typedef struct {
-    GLuint textureID;
-    GLuint VAO;
-    GLuint VBO;
-    GLuint EBO;
-    GLuint shaderProgram;
-} ImageRenderer;
+#include "window.h"
 
 
 unsigned char* loadImage(const char* filename, int* width, int* height, int* channels);
