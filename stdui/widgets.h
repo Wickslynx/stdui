@@ -461,11 +461,14 @@ void SDrawText(const char* text, float x, float y, float scale, float r, float g
     // Use text shader program
     glUseProgram(textShader);
     glUniform3f(glGetUniformLocation(textShader, "textColor"), r, g, b);
+
+    float windowWidth = (float)SGetCurrentWindowWidth(app->display, app->window);
+    float windowHeight = (float)SGetCurrentWindowHeight(app->display, app->window);
     
-    // Set up orthographic projection (Important?) 
+    
     GLfloat projection[16] = {
-        2.0f/800.0f, 0.0f, 0.0f, 0.0f,
-        0.0f, -2.0f/600.0f, 0.0f, 0.0f,
+        2.0f/windowWidth, 0.0f, 0.0f, 0.0f,
+        0.0f, -2.0f/windowHeight, 0.0f, 0.0f,
         0.0f, 0.0f, -1.0f, 0.0f,
         -1.0f, 1.0f, 0.0f, 1.0f
     };
