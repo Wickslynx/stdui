@@ -7,7 +7,7 @@
 #include <GL/gl.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "internal/stb_image.h"
 
 typedef struct {
     GLuint textureID;
