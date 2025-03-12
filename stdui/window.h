@@ -256,6 +256,10 @@ static inline void SBeginFrame(SApplication *app) {
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+
+     if (imageRenderer) {
+            renderImage(imageRenderer);
+     }
 }
 
 
