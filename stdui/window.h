@@ -34,6 +34,15 @@ typedef struct {
     int mouseDown;
 } SApplication;
 
+typedef struct {
+    GLuint textureID;
+    GLuint VAO;
+    GLuint VBO;
+    GLuint EBO;
+    GLuint shaderProgram;
+} ImageRenderer;
+
+
 extern ImageRenderer* imageRenderer;
 
 
