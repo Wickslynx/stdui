@@ -352,6 +352,10 @@ void generateFontTexture() {
 
 
 bool initText() {
+
+    GLint prevVAO, prevArrayBuffer;
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArrayBuffer);
     generateFontTexture();
     
     glGenVertexArrays(1, &textVAO);
@@ -404,6 +408,9 @@ bool initText() {
     glAttachShader(textShader, vertex);
     glAttachShader(textShader, fragment);
     glLinkProgram(textShader);
+
+    glBindVertexArray(prevVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, prevArrayBuffer);
     
     // Clean up
     glDeleteShader(vertex);
