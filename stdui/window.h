@@ -113,6 +113,8 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         XFree(vi);
         return 0;
     }
+
+    initText();
     
     XFree(vi);
     XFlush(app->display);
