@@ -1,5 +1,6 @@
 #include <stdui/window.h>
 #include <stdui/widgets.h>
+#include <stdui/image.h>
 #include <stdui/colors.h>
 
 int main() {
