@@ -34,6 +34,8 @@ typedef struct {
     int mouseDown;
 } SApplication;
 
+extern ImageRenderer* imageRenderer;
+
 
 int SDisplayOpen(SApplication *app) {
     if (app == NULL) {
