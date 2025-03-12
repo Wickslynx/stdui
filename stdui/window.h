@@ -42,7 +42,6 @@ typedef struct {
     GLuint shaderProgram;
 } ImageRenderer;
 
-
 extern ImageRenderer* imageRenderer;
 
 
