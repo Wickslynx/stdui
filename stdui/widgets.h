@@ -350,12 +350,12 @@ void generateFontTexture() {
 }
 
 
-
 bool initText() {
-
-    GLint prevVAO, prevArrayBuffer;
+    GLint prevVAO, prevArrayBuffer, prevProgram;
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArrayBuffer);
+    glGetIntegerv(GL_CURRENT_PROGRAM, &prevProgram);
+    
     generateFontTexture();
     
     glGenVertexArrays(1, &textVAO);
@@ -363,7 +363,6 @@ bool initText() {
     glBindVertexArray(textVAO);
     glBindBuffer(GL_ARRAY_BUFFER, textVBO);
     
-
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
     
     glEnableVertexAttribArray(0);
@@ -372,7 +371,6 @@ bool initText() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     
-
     const char* vertexSource = 
         "#version 330 core\n"
         "layout (location = 0) in vec4 vertex;\n"
@@ -398,41 +396,89 @@ bool initText() {
     glShaderSource(vertex, 1, &vertexSource, NULL);
     glCompileShader(vertex);
     
-
+    // Check for shader compilation errors
+    GLint success;
+    GLchar infoLog[512];
+    glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(vertex, 512, NULL, infoLog);
+        printf("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n%s\n", infoLog);
+    }
+    
     GLuint fragment = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragment, 1, &fragmentSource, NULL);
     glCompileShader(fragment);
     
-
+    // Check for shader compilation errors
+    glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(fragment, 512, NULL, infoLog);
+        printf("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n%s\n", infoLog);
+    }
+    
     textShader = glCreateProgram();
     glAttachShader(textShader, vertex);
     glAttachShader(textShader, fragment);
     glLinkProgram(textShader);
-
-    glBindVertexArray(prevVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, prevArrayBuffer);
+    
+    // Check for linking errors
+    glGetProgramiv(textShader, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(textShader, 512, NULL, infoLog);
+        printf("ERROR::SHADER::PROGRAM::LINKING_FAILED\n%s\n", infoLog);
+    }
     
     // Clean up
     glDeleteShader(vertex);
     glDeleteShader(fragment);
     
+    // Restore previous state
+    glBindVertexArray(prevVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, prevArrayBuffer);
+    glUseProgram(prevProgram);
+    
     return true;
 }
 
 
-void SDrawText(const char* text, float x, float y, float scale, float r, float g, float b) {
-
-    //Why was this so complicated i had to use Claude for this one lol.
+void SDrawText(const char* text, float x, float y, float scale, float r, float g, float b) { //Why was this so anoying to make.
+    // Save current shader program
+    GLint prevProgram;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &prevProgram);
     
+    // Save current texture binding
+    GLint prevTexture;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &prevTexture);
+    
+    // Save current VAO
+    GLint prevVAO;
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
+    
+    // Save current buffer binding
+    GLint prevBuffer;
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevBuffer);
+    
+    // Use text shader program
     glUseProgram(textShader);
     glUniform3f(glGetUniformLocation(textShader, "textColor"), r, g, b);
+    
+    // Set up orthographic projection (Important?) 
+    GLfloat projection[16] = {
+        2.0f/800.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, -2.0f/600.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, -1.0f, 0.0f,
+        -1.0f, 1.0f, 0.0f, 1.0f
+    };
+    glUniformMatrix4fv(glGetUniformLocation(textShader, "projection"), 1, GL_FALSE, projection);
+    
+    // Activate texture
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fontTexture);
     
-
+    // Bind VAO
     glBindVertexArray(textVAO);
     
-
+    // Render text
     float xpos = x;
     while (*text) {
         char c = *text++;
@@ -442,14 +488,13 @@ void SDrawText(const char* text, float x, float y, float scale, float r, float g
             continue;
         }
         
-    
         int charIndex = c - 32;
         float s = (charIndex % 16) * 8.0f / 128.0f;
         float t = (charIndex / 16) * 8.0f / 48.0f;
         
         float w = 8 * scale;
         float h = 8 * scale;
-    
+        
         float vertices[6][4] = {
             { xpos,     y + h,   s,            t            },
             { xpos,     y,       s,            t + 8.0f/48.0f },
@@ -460,19 +505,19 @@ void SDrawText(const char* text, float x, float y, float scale, float r, float g
             { xpos + w, y + h,   s + 8.0f/128.0f, t            }
         };
         
-
         glBindBuffer(GL_ARRAY_BUFFER, textVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
         
         glDrawArrays(GL_TRIANGLES, 0, 6);
         
         xpos += w;
     }
     
-    // Unbind
-    glBindVertexArray(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    // Restore previous state
+    glBindVertexArray(prevVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, prevBuffer);
+    glBindTexture(GL_TEXTURE_2D, prevTexture);
+    glUseProgram(prevProgram);
 }
 
 
