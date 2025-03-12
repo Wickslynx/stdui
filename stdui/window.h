@@ -1,6 +1,6 @@
 // Global stuff declared here.
 #include <stdio.h>
-
+#include <stdbool.h>
 
 #if defined(__linux__)
     #pragma comment(lib, "X11")
@@ -19,6 +19,8 @@
 #include <X11/keysym.h>
 #include <GL/gl.h>
 #include <GL/glx.h>  
+
+bool initText():
 
 typedef struct {
     Display *display;
@@ -114,7 +116,11 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         return 0;
     }
 
-    initText();
+    if (!initText()) {
+        fprintf(stderr, "ERROR: Failed to initialize text rendering.\n");
+        XFree(vi);
+        return 0;
+    }
     
     XFree(vi);
     XFlush(app->display);
