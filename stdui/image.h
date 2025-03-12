@@ -18,8 +18,7 @@ void RenderImage(const char* filename, int width, int height, float posX, float 
 void renderImage(ImageRenderer* renderer);
 void destroyImageRenderer(ImageRenderer* renderer);
 
-
-ImageRenderer* imageRenderer = NULL;  
+imageRenderer = NULL;  
 
 // Vertex shader
 const char* vertexShaderSource = 
