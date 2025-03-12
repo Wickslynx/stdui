@@ -20,7 +20,7 @@
 #include <GL/gl.h>
 #include <GL/glx.h>  
 
-bool initText():
+bool initText();
 
 typedef struct {
     Display *display;
