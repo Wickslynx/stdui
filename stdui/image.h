@@ -1,3 +1,5 @@
+#ifndef IMAGE_H
+#define IMAGE_H
 //Copyright (C) <2025>  <Wickslynx>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +11,14 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "internal/stb_image.h"
 
-#include "window.h"
+
+typedef struct {
+    GLuint textureID;
+    GLuint VAO;
+    GLuint VBO;
+    GLuint EBO;
+    GLuint shaderProgram;
+} ImageRenderer;
 
 
 unsigned char* loadImage(const char* filename, int* width, int* height, int* channels);
@@ -191,3 +200,4 @@ void SDrawImage(const char* filename, int width, int height, float posX, float p
 
 
 #endif //STDUI_IMAGE_SUPPORT_OFF
+#endif //IMAGE_H
