@@ -886,7 +886,21 @@ void SDrawButton(SApplication* app, SButton* button) {
     // Restore original color
     button->base.color = originalColor;
     
-    // TODO: Draw text (requires text rendering function)
+     if (button->text.text != NULL) {
+        // Calculate text position (centered in the button)
+        // Get approximate text width (assuming monospace font where each char is 8 pixels wide)
+        float textWidth = strlen(button->text.text) * button->text.fontSize;
+        
+        // Center text horizontally and vertically
+        float textX = button->base.x - textWidth/2;
+        float textY = button->base.y - button->text.fontSize/2;
+        
+        // Draw the text
+        SDrawText(app, button->text.text, textX, textY, button->text.fontSize/8.0f, 
+                 button->text.color.r, button->text.color.g, button->text.color.b);
+    }
+}
+
     
 }
 
@@ -906,10 +920,19 @@ void SDrawToggle(SApplication* app, SToggle* toggle) {
         SRectangle(app, &checkmark);
     }
     
-    // TODO: Draw text label (requires text rendering function)
+    if (toggle->text.text != NULL) {
+        // Position text to the right of the toggle box
+        float textX = toggle->base.x + toggle->base.width/2 + toggle->text.fontSize/2;
+        float textY = toggle->base.y - toggle->text.fontSize/2;
+        
+        // Draw the text
+        SDrawText(app, toggle->text.text, textX, textY, toggle->text.fontSize/8.0f,
+                 toggle->text.color.r, toggle->text.color.g, toggle->text.color.b);
+    }
+    
 }
 
-// Draw a menu bar widget
+
 void SDrawMenuBar(SApplication* app, SMenuBar* menuBar) {
     // Draw the menu bar background
     SRectangle(app, &menuBar->base);
@@ -918,6 +941,7 @@ void SDrawMenuBar(SApplication* app, SMenuBar* menuBar) {
     if (menuBar->items != NULL) {
         float itemWidth = menuBar->base.width / menuBar->itemCount;
         float startX = menuBar->base.x - (menuBar->base.width / 2) + (itemWidth / 2);
+        float fontSize = menuBar->base.height * 0.6f;
         
         for (int i = 0; i < menuBar->itemCount; i++) {
             // Create a shape for the menu item
@@ -939,7 +963,14 @@ void SDrawMenuBar(SApplication* app, SMenuBar* menuBar) {
             
             SRectangle(app, &itemShape);
             
-            // TODO: Draw menu text (requires text rendering function)
+            // Draw menu item text
+            if (menuBar->items[i].text != NULL) {
+                float textX = startX + (i * itemWidth) - (strlen(menuBar->items[i].text) * fontSize)/2;
+                float textY = menuBar->base.y - fontSize/2;
+                
+                SDrawText(app, menuBar->items[i].text, textX, textY, fontSize/8.0f, 
+                         1.0f, 1.0f, 1.0f); // White text
+            }
         }
         
         // Draw dropdown menu if active
@@ -975,9 +1006,69 @@ void SDrawMenuBar(SApplication* app, SMenuBar* menuBar) {
                     
                     SRectangle(app, &subItemShape);
                     
-                    // TODO: Draw submenu text
+                    // Draw submenu text
+                    if (activeItem->subItems[j].text != NULL) {
+                        float subTextX = dropdownX - (strlen(activeItem->subItems[j].text) * fontSize)/2;
+                        float subTextY = menuBar->base.y + menuBar->base.height + (j * menuBar->base.height) + menuBar->base.height/2 - fontSize/2;
+                        
+                        SDrawText(app, activeItem->subItems[j].text, subTextX, subTextY, fontSize/8.0f,
+                                 1.0f, 1.0f, 1.0f); // White text
+                    }
                 }
             }
+        }
+    }
+}
+
+void SDrawProgressBar(SApplication* app, SProgressBar* progressBar) {
+    // Draw the progress bar background
+    SRectangle(app, &progressBar->base);
+    
+    // Draw the fill
+    SRectangle(app, &progressBar->fill);
+    
+    // Draw progress text if enabled
+    if (progressBar->showText) {
+        // Create percentage text
+        char percentText[8];
+        int percentage = (int)((progressBar->value - progressBar->min) / 
+                               (progressBar->max - progressBar->min) * 100);
+        sprintf(percentText, "%d%%", percentage);
+        
+        float fontSize = progressBar->base.height * 0.7f;
+        float textX = progressBar->base.x - (strlen(percentText) * fontSize)/2;
+        float textY = progressBar->base.y - fontSize/2;
+        
+        // Draw text
+        SDrawText(app, percentText, textX, textY, fontSize/8.0f,
+                 1.0f, 1.0f, 1.0f); // White text
+    }
+}
+
+// Modified text field drawing function to show text and cursor
+void SDrawTextField(SApplication* app, STextField* textField) {
+    // Draw text field background
+    SRectangle(app, &textField->base);
+    
+    // Draw text
+    if (textField->buffer != NULL) {
+        float fontSize = textField->base.height * 0.7f;
+        float textX = textField->base.x - textField->base.width/2 + fontSize/2; // Left-aligned with margin
+        float textY = textField->base.y - fontSize/2;
+        
+        // Draw text content
+        SDrawText(app, textField->buffer, textX, textY, fontSize/8.0f,
+                 0.0f, 0.0f, 0.0f); // Black text
+        
+        // Draw cursor if text field is focused
+        if (textField->state.focused) {
+            // Calculate cursor position
+            float cursorX = textX + textField->cursorPos * fontSize;
+            
+            // Draw cursor line
+            float color[3] = {0.0f, 0.0f, 0.0f}; // Black
+            SDrawRectangle(app, color, cursorX, textField->base.y, 
+                          1.0f, textField->base.height * 0.8f);
         }
     }
 }
