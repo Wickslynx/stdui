@@ -23,7 +23,7 @@ typedef struct {
 
 unsigned char* loadImage(const char* filename, int* width, int* height, int* channels);
 ImageRenderer* createImageRenderer(const char* filename, int width, int height, float posX, float posY);
-void RenderImage(const char* filename, int width, int height, float posX, float posY);
+void SDrawImage(const char* filename, int width, int height, float posX, float posY);
 void renderImage(ImageRenderer* renderer);
 void destroyImageRenderer(ImageRenderer* renderer);
 
@@ -177,7 +177,7 @@ void renderImage(ImageRenderer* renderer) {
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
-void RenderImage(const char* filename, int width, int height, float posX, float posY) {
+void SDrawImage(const char* filename, int width, int height, float posX, float posY) {
     imageRenderer = createImageRenderer(filename, width, height, posX, posY);
 }
 
