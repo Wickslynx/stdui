@@ -44,7 +44,7 @@ int main() {
         SDrawTriangle(&app, blue, 100.0f, 150.0f, 50.0f);   
         SDrawRectangle(&app, red, 200.0f, 150.0f, 40.0f, 40.0f);  
         SDrawCircle(&app, green, 300.0f, 150.0f, 25.0f); 
-        SDrawImage("images/image.png", 1920, 1080, 0.5, -0.5);
+        SDrawImage("docs/images/image.png", 1920, 1080, 0.5, -0.5);
         // End frame
         SSwapBuffers(&app);
     }
