@@ -27,7 +27,10 @@ void SDrawImage(const char* filename, int width, int height, float posX, float p
 void renderImage(ImageRenderer* renderer);
 void destroyImageRenderer(ImageRenderer* renderer);
 
-imageRenderer = NULL;  
+// Fixed: Added extern for global variable declaration
+extern ImageRenderer* imageRenderer;
+// Fixed: Added proper initialization in the implementation section
+ImageRenderer* imageRenderer = NULL;
 
 // Vertex shader
 const char* vertexShaderSource = 
@@ -178,6 +181,11 @@ void renderImage(ImageRenderer* renderer) {
 }
 
 void SDrawImage(const char* filename, int width, int height, float posX, float posY) {
+    // Fixed: Free existing image renderer before creating a new one
+    if (imageRenderer) {
+        destroyImageRenderer(imageRenderer);
+        imageRenderer = NULL;
+    }
     imageRenderer = createImageRenderer(filename, width, height, posX, posY);
 }
 
@@ -195,7 +203,8 @@ void destroyImageRenderer(ImageRenderer* renderer) {
 #else
 
 void SDrawImage(const char* filename, int width, int height, float posX, float posY) {
-    printf("(WARNING) Images is not supported in the vulkan version, will not be rendered.");
+    printf("(WARNING) Images is not supported in the vulkan version, will not be rendered.\n");
+    // Fixed: Added newline character to the warning message
 }
 
 
