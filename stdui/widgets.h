@@ -901,8 +901,6 @@ void SDrawButton(SApplication* app, SButton* button) {
     }
 }
 
-    
-}
 
 // Draw a toggle/checkbox widget
 void SDrawToggle(SApplication* app, SToggle* toggle) {
