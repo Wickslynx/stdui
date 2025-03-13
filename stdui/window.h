@@ -34,9 +34,9 @@ typedef struct {
     int mouseDown;
 } SApplication;
 
-
+#ifdef IMAGE_H
 extern ImageRenderer* imageRenderer;
-
+#endif
 
 int SDisplayOpen(SApplication *app) {
     if (app == NULL) {
@@ -260,9 +260,11 @@ static inline void SBeginFrame(SApplication *app) {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-     if (imageRenderer) {
-            renderImage(imageRenderer);
-     }
+    #ifdef IMAGE_H
+    if (imageRenderer) {
+        renderImage(imageRenderer);
+    }
+    #endif
 }
 
 
