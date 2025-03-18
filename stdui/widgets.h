@@ -302,35 +302,61 @@ void SDrawCircle(SApplication *app, float color[3], float posX, float posY, floa
     SCircle(app, &props);
 }
 
+// Add these includes at the top of your file
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "stb_truetype.h"
 
-// Generate font texture from embedded bitmap data
-void generateFontTexture() {
-    // Create a texture with all font characters (8x8 pixels each, 16x6 grid
-    const int fontTexWidth = 128;  // 16 chars per row, 8 pixels each
-    const int fontTexHeight = 48;  // 6 rows, 8 pixels each
-    
-    // Create empty texture data (all black)
-    unsigned char* textureData = (unsigned char*)malloc(fontTexWidth * fontTexHeight);
-    memset(textureData, 0, fontTexWidth * fontTexHeight);
-    
-    // Fill in the texture data with font bitmap
-    for (int charIndex = 0; charIndex < 96; charIndex++) {
-        int gridX = (charIndex % 16) * 8;
-        int gridY = (charIndex / 16) * 8;
-        
-        // Copy character bitmap to texture
-        for (int x = 0; x < 8; x++) {
-            unsigned char column = fontData[charIndex][x];
-            for (int y = 0; y < 8; y++) {
-                if (column & (1 << y)) {
-                    int texX = gridX + x;
-                    int texY = gridY + y;
-                    textureData[texY * fontTexWidth + texX] = 255; // White pixel
-                }
-            }
-        }
+// Global variables for text rendering
+GLuint fontTexture;
+GLuint textVAO, textVBO;
+GLuint textShader;
+stbtt_bakedchar charData[96]; // ASCII 32..126 is 95 glyphs
+float fontTexWidth = 512;
+float fontTexHeight = 512;
+
+// Generate font texture using stb_truetype
+bool generateFontTexture(const char* fontPath) {
+    // Load font file
+    FILE* fontFile = fopen(fontPath, "rb");
+    if (!fontFile) {
+        fprintf(stderr, "ERROR: Failed to open font file: %s\n", fontPath);
+        return false;
     }
-
+    
+    // Get file size
+    fseek(fontFile, 0, SEEK_END);
+    long fileSize = ftell(fontFile);
+    fseek(fontFile, 0, SEEK_SET);
+    
+    // Read font file data
+    unsigned char* fontFileData = (unsigned char*)malloc(fileSize);
+    if (!fontFileData) {
+        fprintf(stderr, "ERROR: Failed to allocate memory for font file\n");
+        fclose(fontFile);
+        return false;
+    }
+    
+    fread(fontFileData, 1, fileSize, fontFile);
+    fclose(fontFile);
+    
+    // Create bitmap for font texture atlas
+    unsigned char* bitmapData = (unsigned char*)malloc(fontTexWidth * fontTexHeight);
+    if (!bitmapData) {
+        fprintf(stderr, "ERROR: Failed to allocate memory for font bitmap\n");
+        free(fontFileData);
+        return false;
+    }
+    
+    // Bake font to bitmap
+    // Parameters: font data, font index, font height in pixels, bitmap data, width, height, first char, num chars, output char data
+    int result = stbtt_BakeFontBitmap(fontFileData, 0, 24.0f, bitmapData, fontTexWidth, fontTexHeight, 32, 96, charData);
+    
+    if (result <= 0) {
+        fprintf(stderr, "ERROR: Failed to bake font bitmap\n");
+        free(fontFileData);
+        free(bitmapData);
+        return false;
+    }
     
     // Generate OpenGL texture
     glGenTextures(1, &fontTexture);
@@ -339,38 +365,49 @@ void generateFontTexture() {
     // Set texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     
     // Upload texture
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, fontTexWidth, fontTexHeight, 0, GL_RED, GL_UNSIGNED_BYTE, textureData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, fontTexWidth, fontTexHeight, 0, GL_RED, GL_UNSIGNED_BYTE, bitmapData);
     
     // Clean up
-    free(textureData);
+    free(fontFileData);
+    free(bitmapData);
+    
+    return true;
 }
 
-
 bool initText() {
+    // Save previous OpenGL state
     GLint prevVAO, prevArrayBuffer, prevProgram;
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevArrayBuffer);
     glGetIntegerv(GL_CURRENT_PROGRAM, &prevProgram);
     
-    generateFontTexture();
+    // Generate font texture
+    if (!generateFontTexture("fonts/arial.ttf")) {
+        fprintf(stderr, "ERROR: Failed to generate font texture\n");
+        return false;
+    }
     
+    // Create VBO and VAO for text rendering
     glGenVertexArrays(1, &textVAO);
     glGenBuffers(1, &textVBO);
     glBindVertexArray(textVAO);
     glBindBuffer(GL_ARRAY_BUFFER, textVBO);
     
+    // Pre-allocate buffer data
     glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
     
+    // Setup vertex attributes
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     
+    // Create shader program
     const char* vertexSource = 
         "#version 330 core\n"
         "layout (location = 0) in vec4 vertex;\n"
@@ -392,6 +429,7 @@ bool initText() {
         "   color = vec4(textColor, alpha);\n"
         "}\0";
     
+    // Compile vertex shader
     GLuint vertex = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertex, 1, &vertexSource, NULL);
     glCompileShader(vertex);
@@ -405,6 +443,7 @@ bool initText() {
         printf("ERROR::SHADER::VERTEX::COMPILATION_FAILED\n%s\n", infoLog);
     }
     
+    // Compile fragment shader
     GLuint fragment = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragment, 1, &fragmentSource, NULL);
     glCompileShader(fragment);
@@ -416,6 +455,7 @@ bool initText() {
         printf("ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n%s\n", infoLog);
     }
     
+    // Link shader program
     textShader = glCreateProgram();
     glAttachShader(textShader, vertex);
     glAttachShader(textShader, fragment);
@@ -428,36 +468,33 @@ bool initText() {
         printf("ERROR::SHADER::PROGRAM::LINKING_FAILED\n%s\n", infoLog);
     }
     
-    // Clean up
+    // Clean up shaders
     glDeleteShader(vertex);
     glDeleteShader(fragment);
     
-    // Restore previous state
+    // Restore previous OpenGL state
     glBindVertexArray(prevVAO);
     glBindBuffer(GL_ARRAY_BUFFER, prevArrayBuffer);
     glUseProgram(prevProgram);
 
+    // Enable blending for transparent text
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     return true;
 }
 
-
-void SDrawText(SApplication *app, const char* text, float x, float y, float scale, float r, float g, float b) { //Why was this so anoying to make.
-    // Save current shader program
+void SDrawText(SApplication *app, const char* text, float x, float y, float scale, float r, float g, float b) {
+    // Save current OpenGL state
     GLint prevProgram;
     glGetIntegerv(GL_CURRENT_PROGRAM, &prevProgram);
     
-    // Save current texture binding
     GLint prevTexture;
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &prevTexture);
     
-    // Save current VAO
     GLint prevVAO;
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
     
-    // Save current buffer binding
     GLint prevBuffer;
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevBuffer);
     
@@ -465,10 +502,11 @@ void SDrawText(SApplication *app, const char* text, float x, float y, float scal
     glUseProgram(textShader);
     glUniform3f(glGetUniformLocation(textShader, "textColor"), r, g, b);
 
+    // Get window dimensions for projection matrix
     float windowWidth = (float)SGetCurrentWindowWidth(app->display, app->window);
     float windowHeight = (float)SGetCurrentWindowHeight(app->display, app->window);
     
-    
+    // Setup orthographic projection matrix (screen space)
     GLfloat projection[16] = {
         2.0f/windowWidth, 0.0f, 0.0f, 0.0f,
         0.0f, -2.0f/windowHeight, 0.0f, 0.0f,
@@ -484,47 +522,67 @@ void SDrawText(SApplication *app, const char* text, float x, float y, float scal
     // Bind VAO
     glBindVertexArray(textVAO);
     
-    // Render text
-    float xpos = x;
+    // Starting position
+    float startX = x;
+    float startY = y;
+    
+    // Render each character
     while (*text) {
         char c = *text++;
         
-        if (c < 32 || c > 127) {
-            xpos += 8 * scale;
+        // Handle newlines
+        if (c == '\n') {
+            y += (charData[0].y1 - charData[0].y0) * 1.25f * scale;
+            x = startX;
             continue;
         }
         
-        int charIndex = c - 32;
-        float s = (charIndex % 16) * 8.0f / 128.0f;
-        float t = (charIndex / 16) * 8.0f / 48.0f;
+        // Skip non-printable characters
+        if (c < 32 || c > 127) {
+            continue;
+        }
         
-        float w = 8 * scale;
-        float h = 8 * scale;
+        // Get character data from the baked font
+        stbtt_aligned_quad q;
+        stbtt_GetBakedQuad(charData, fontTexWidth, fontTexHeight, c - 32, &x, &y, &q, 1);
         
+        // Scale the quad
+        float x0 = q.x0 * scale;
+        float y0 = q.y0 * scale;
+        float x1 = q.x1 * scale;
+        float y1 = q.y1 * scale;
+        
+        // Adjust Y position (stb_truetype assumes y increases upwards, OpenGL usually has y increasing downwards)
+        float yOffset = startY - y0;
+        y0 += yOffset;
+        y1 += yOffset;
+        
+        // Create vertices for this character
         float vertices[6][4] = {
-            { xpos,     y + h,   s,            t            },
-            { xpos,     y,       s,            t + 8.0f/48.0f },
-            { xpos + w, y,       s + 8.0f/128.0f, t + 8.0f/48.0f },
+            { x0, y0, q.s0, q.t0 },
+            { x0, y1, q.s0, q.t1 },
+            { x1, y1, q.s1, q.t1 },
             
-            { xpos,     y + h,   s,            t            },
-            { xpos + w, y,       s + 8.0f/128.0f, t + 8.0f/48.0f },
-            { xpos + w, y + h,   s + 8.0f/128.0f, t            }
+            { x0, y0, q.s0, q.t0 },
+            { x1, y1, q.s1, q.t1 },
+            { x1, y0, q.s1, q.t0 }
         };
         
+        // Update VBO
         glBindBuffer(GL_ARRAY_BUFFER, textVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
         
+        // Draw character
         glDrawArrays(GL_TRIANGLES, 0, 6);
-        
-        xpos += w;
     }
     
-    // Restore previous state
+    // Restore previous OpenGL state
     glBindVertexArray(prevVAO);
     glBindBuffer(GL_ARRAY_BUFFER, prevBuffer);
     glBindTexture(GL_TEXTURE_2D, prevTexture);
     glUseProgram(prevProgram);
 }
+
 
 
 // Widget state structure
