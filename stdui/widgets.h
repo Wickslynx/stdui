@@ -304,7 +304,7 @@ void SDrawCircle(SApplication *app, float color[3], float posX, float posY, floa
 
 // Add these includes at the top of your file
 #define STB_TRUETYPE_IMPLEMENTATION
-#include "stb_truetype.h"
+#include "internal/stb_truetype.h"
 
 // Global variables for text rendering
 GLuint fontTexture;
