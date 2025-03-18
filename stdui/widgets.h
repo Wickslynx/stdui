@@ -305,7 +305,7 @@ void SDrawCircle(SApplication *app, float color[3], float posX, float posY, floa
 
 // Generate font texture from embedded bitmap data
 void generateFontTexture() {
-    // Create a texture with all font characters (8x8 pixels each, 16x6 grid)
+    // Create a texture with all font characters (8x8 pixels each, 16x6 grid
     const int fontTexWidth = 128;  // 16 chars per row, 8 pixels each
     const int fontTexHeight = 48;  // 6 rows, 8 pixels each
     
@@ -436,6 +436,9 @@ bool initText() {
     glBindVertexArray(prevVAO);
     glBindBuffer(GL_ARRAY_BUFFER, prevArrayBuffer);
     glUseProgram(prevProgram);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     return true;
 }
