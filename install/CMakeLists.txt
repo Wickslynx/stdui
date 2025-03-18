@@ -19,6 +19,8 @@ set(HEADERS
     ${PARENT_DIR}/stdui/image.h
     ${PARENT_DIR}/stdui/internal/layout.h
     ${PARENT_DIR}/stdui/internal/font.h
+    ${PARENT_DIR}/stdui/internal/stb_truetype.h
+    ${PARENT_DIR}/stdui/internal/stb_image.h
 )
 
 # List of sources
