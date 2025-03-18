@@ -119,7 +119,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         return 0;
     }
 
-    if (!initText()) {
+    if (!initText("internal/arial.ttf")) {
         fprintf(stderr, "ERROR: Failed to initialize text rendering.\n");
         XFree(vi);
         return 0;
