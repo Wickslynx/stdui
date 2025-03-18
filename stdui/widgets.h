@@ -378,7 +378,7 @@ bool generateFontTexture(const char* fontPath) {
     return true;
 }
 
-bool initText() {
+bool initText(const char* fontPath) {
     // Save previous OpenGL state
     GLint prevVAO, prevArrayBuffer, prevProgram;
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
@@ -386,7 +386,7 @@ bool initText() {
     glGetIntegerv(GL_CURRENT_PROGRAM, &prevProgram);
     
     // Generate font texture
-    if (!generateFontTexture("fonts/arial.ttf")) {
+    if (!generateFontTexture(fontPath)) {
         fprintf(stderr, "ERROR: Failed to generate font texture\n");
         return false;
     }
