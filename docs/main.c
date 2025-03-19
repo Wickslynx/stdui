@@ -30,7 +30,7 @@ int main() {
         SBeginFrame(&app);
         
         
-        SDrawText(&app, "OpenGL Text Rendering Demo", 10, SGetCurrentWindowHeight(app.display, app.window) - 30, 2.0f, 1.0f, 1.0f, 1.0f);
+        SDrawText(&app, "OpenGL Text Rendering Demo", 10, SGetCurrentWindowHeight(&app) - 30, 2.0f, 1.0f, 1.0f, 1.0f);
         // Draw widgets
         SDrawSlider(&app, &slider);
         SDrawButton(&app, &button);
