@@ -56,69 +56,118 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         return 0;
     }
     
-
-    static int visual_attribs[] = {
-        GLX_RGBA,
-        GLX_DEPTH_SIZE, 24,
-        GLX_DOUBLEBUFFER,
+    int context_attribs[] = {
+        GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
+        GLX_CONTEXT_MINOR_VERSION_ARB, 3,
+        GLX_CONTEXT_PROFILE_MASK_ARB, GLX_CONTEXT_CORE_PROFILE_BIT_ARB,
         None
     };
     
-   
-    XVisualInfo *vi = glXChooseVisual(app->display, app->screen, visual_attribs);
-    if (vi == NULL) {
-        fprintf(stderr, "ERROR: No appropriate visual found for OpenGL.\n");
+    // For framebuffer configuration
+    static int visual_attribs[] = {
+        GLX_X_RENDERABLE    , True,
+        GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
+        GLX_RENDER_TYPE     , GLX_RGBA_BIT,
+        GLX_X_VISUAL_TYPE   , GLX_TRUE_COLOR,
+        GLX_RED_SIZE        , 8,
+        GLX_GREEN_SIZE      , 8,
+        GLX_BLUE_SIZE       , 8,
+        GLX_ALPHA_SIZE      , 8,
+        GLX_DEPTH_SIZE      , 24,
+        GLX_STENCIL_SIZE    , 8,
+        GLX_DOUBLEBUFFER    , True,
+        None
+    };
+    
+    // Get framebuffer configs that match our criteria
+    int fbcount;
+    GLXFBConfig* fbc = glXChooseFBConfig(app->display, app->screen, visual_attribs, &fbcount);
+    if (!fbc) {
+        fprintf(stderr, "ERROR: Failed to retrieve framebuffer config\n");
         return 0;
     }
     
-
-    app->colormap = XCreateColormap(app->display, 
-                                   RootWindow(app->display, app->screen),
-                                   vi->visual, AllocNone);
+    // Find the best config
+    int best_fbc = -1, worst_fbc = -1, best_num_samp = -1, worst_num_samp = 999;
+    for (int i = 0; i < fbcount; ++i) {
+        XVisualInfo *vi = glXGetVisualFromFBConfig(app->display, fbc[i]);
+        if (vi) {
+            int samp_buf, samples;
+            glXGetFBConfigAttrib(app->display, fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf);
+            glXGetFBConfigAttrib(app->display, fbc[i], GLX_SAMPLES, &samples);
+            
+            if (best_fbc < 0 || (samp_buf && samples > best_num_samp)) {
+                best_fbc = i;
+                best_num_samp = samples;
+            }
+            if (worst_fbc < 0 || !samp_buf || samples < worst_num_samp) {
+                worst_fbc = i;
+                worst_num_samp = samples;
+            }
+            XFree(vi);
+        }
+    }
     
-
+    GLXFBConfig bestFbc = fbc[best_fbc];
+    XFree(fbc);
+    
+    // Get a visual
+    XVisualInfo *vi = glXGetVisualFromFBConfig(app->display, bestFbc);
+    
+    // Create colormap
+    app->colormap = XCreateColormap(app->display, RootWindow(app->display, app->screen), 
+                                    vi->visual, AllocNone);
+    
+    // Window attributes
     XSetWindowAttributes swa;
     swa.colormap = app->colormap;
-    swa.event_mask = ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask;  
+    swa.event_mask = ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask;
     
-
-    app->window = XCreateWindow(
-        app->display,
-        RootWindow(app->display, app->screen),
-        x, y,
-        width, height,
-        0,                 // border width
-        vi->depth,         // depth from the visual
-        InputOutput,       // class
-        vi->visual,        // visual
-        CWColormap | CWEventMask, // value mask
-        &swa               // attributes
-    );
+    // Create window
+    app->window = XCreateWindow(app->display, RootWindow(app->display, app->screen), 
+                                x, y, width, height, 0, vi->depth, InputOutput, 
+                                vi->visual, CWColormap | CWEventMask, &swa);
     
-
+    // Set window title
     XStoreName(app->display, app->window, title);
     
-
-    app->glx_context = glXCreateContext(app->display, vi, NULL, GL_TRUE);
-    if (app->glx_context == NULL) {
-        fprintf(stderr, "ERROR: Failed to create GLX context.\n");
+    // Get the function to create OpenGL 3.3 context
+    PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribsARB = 
+        (PFNGLXCREATECONTEXTATTRIBSARBPROC) glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
+    
+    if (!glXCreateContextAttribsARB) {
+        fprintf(stderr, "ERROR: glXCreateContextAttribsARB() not found\n");
+        app->glx_context = glXCreateNewContext(app->display, bestFbc, GLX_RGBA_TYPE, NULL, True);
+    } else {
+        app->glx_context = glXCreateContextAttribsARB(app->display, bestFbc, NULL, True, context_attribs);
+    }
+    
+    // Verify context
+    if (!app->glx_context) {
+        fprintf(stderr, "ERROR: Failed to create OpenGL context\n");
         XFree(vi);
         return 0;
     }
     
-    // Show the window
-    XMapWindow(app->display, app->window);    
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-
+    // Make context current
     if (!glXMakeCurrent(app->display, app->window, app->glx_context)) {
-        fprintf(stderr, "ERROR: Failed to make GLX context current.\n");
+        fprintf(stderr, "ERROR: Failed to make context current\n");
         XFree(vi);
         return 0;
     }
+    
+    // Map window
+    XMapWindow(app->display, app->window);
+    
+    
+    const char* version = (const char*)glGetString(GL_VERSION);
+    const char* shaderVersion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
 
+    // Enable blending for text
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    // Initialize text rendering
     if (!initText("stdui/internal/courier_new.ttf")) {
         fprintf(stderr, "ERROR: Failed to initialize text rendering.\n");
         XFree(vi);
@@ -129,6 +178,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     XFlush(app->display);
     return 1;
 }
+
 
 void SGetMouseState(SApplication *app) {
     if (app == NULL) {
