@@ -8,6 +8,9 @@
 #include "internal/layout.h"
 #include "internal/font.h"
 
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "internal/stb_truetype.h"
+
 
 typedef struct {
     float r, g, b, a;
@@ -302,9 +305,7 @@ void SDrawCircle(SApplication *app, float color[3], float posX, float posY, floa
     SCircle(app, &props);
 }
 
-// Add these includes at the top of your file
-#define STB_TRUETYPE_IMPLEMENTATION
-#include "internal/stb_truetype.h"
+
 
 // Global variables for text rendering
 GLuint fontTexture;
