@@ -119,7 +119,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         return 0;
     }
 
-    if (!initText("stdui/internal/coruirer_new.ttf")) {
+    if (!initText("stdui/internal/courier_new.ttf")) {
         fprintf(stderr, "ERROR: Failed to initialize text rendering.\n");
         XFree(vi);
         return 0;

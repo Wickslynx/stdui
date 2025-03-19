@@ -12,6 +12,7 @@
 #include "internal/stb_truetype.h"
 
 
+
 typedef struct {
     float r, g, b, a;
 } SColor;
@@ -305,6 +306,26 @@ void SDrawCircle(SApplication *app, float color[3], float posX, float posY, floa
     SCircle(app, &props);
 }
 
+void checkGLSLVersion() { //Easy stuff to prevent a random error.
+    const GLubyte* versionStr = glGetString(GL_SHADING_LANGUAGE_VERSION);
+    if (versionStr == NULL) {
+        fprintf(stderr, "ERROR: Unable to retrieve GLSL version.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int major = 0, minor = 0;
+    if (sscanf((const char*)versionStr, "%d.%d", &major, &minor) != 2) {
+        fprintf(stderr, "ERROR: Unable to parse GLSL version.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Check if version < 3.3
+    if (major < 3 || (major == 3 && minor < 3)) {
+        fprintf(stderr, "ERROR: GLSL version 3.3 is required. Detected version: %d.%d\n", major, minor);
+        exit(EXIT_FAILURE);
+    }
+}
+
 
 
 // Global variables for text rendering
@@ -381,8 +402,7 @@ bool generateFontTexture(const char* fontPath) {
 
 bool initText(const char* fontPath) {
 
-    const GLubyte* glsl_version = glGetString(GL_SHADING_LANGUAGE_VERSION);
-    //printf("GLSL Version: %s\n", glsl_version);
+    checkGLSLVersion();
 
     // Save previous OpenGL state
     GLint prevVAO, prevArrayBuffer, prevProgram;
