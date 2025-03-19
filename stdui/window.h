@@ -11,18 +11,18 @@
     #pragma comment(lib, "user32.lib")
 #endif
 
-
-
-
 #if defined(__linux__)
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <GL/glx.h>
 #include <GL/glxext.h>
+#include <GL/gl.h>
 
 typedef GLXContext (*PFNGLXCREATECONTEXTATTRIBSARBPROC)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
-bool initText();
+// Forward declarations
+bool initText(const char* fontPath);
+void SUpdateViewport(SApplication *app, int width, int height);
 
 typedef struct {
     Display *display;
@@ -38,6 +38,7 @@ typedef struct {
 
 #ifdef IMAGE_H
 extern ImageRenderer* imageRenderer;
+void renderImage(ImageRenderer* renderer);
 #endif
 
 int SDisplayOpen(SApplication *app) {
@@ -277,10 +278,16 @@ static inline void SClearScreen(SApplication *app, float r, float g, float b) {
 }
 
 
-static inline int SGetCurrentWindowWidth(Display *display, Window window) {
-    int x, y; //Unused right now.        
+static inline int SGetCurrentWindowWidth(SApplication *app) {
+    if (app == NULL || app->display == NULL) {
+        return -1;
+    }
+    
+    int x, y; // Unused right now.        
     unsigned int width, height, borderWidth, depth;
-    if (XGetGeometry(display, window, &window, &x, &y, &width, &height, &borderWidth, &depth)) {
+    Window root_return;
+    
+    if (XGetGeometry(app->display, app->window, &root_return, &x, &y, &width, &height, &borderWidth, &depth)) {
         return width; 
     } else {
         fprintf(stderr, "Error: Could not retrieve window geometry.\n");
@@ -289,11 +296,16 @@ static inline int SGetCurrentWindowWidth(Display *display, Window window) {
 }
 
 
-static inline int SGetCurrentWindowHeight(Display *display, Window window) {
+static inline int SGetCurrentWindowHeight(SApplication *app) {
+    if (app == NULL || app->display == NULL) {
+        return -1;
+    }
+    
     int x, y;                
     unsigned int width, height, borderWidth, depth;
+    Window root_return;
 
-    if (XGetGeometry(display, window, &window, &x, &y, &width, &height, &borderWidth, &depth)) {
+    if (XGetGeometry(app->display, app->window, &root_return, &x, &y, &width, &height, &borderWidth, &depth)) {
         return height;
     } else {
         fprintf(stderr, "Error: Could not retrieve window geometry.\n");
@@ -301,9 +313,23 @@ static inline int SGetCurrentWindowHeight(Display *display, Window window) {
     }
 }
 
+void SUpdateViewport(SApplication *app, int width, int height) {
+    glViewport(0, 0, width, height);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, width, height, 0, -1, 1); // Origin at top-left
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
 
 static inline void SBeginFrame(SApplication *app) {
-    SUpdateViewport(app, SGetCurrentWindowWidth(app->display, app->window), SGetCurrentWindowHeight(app->display, app->window));
+    int width = SGetCurrentWindowWidth(app);
+    int height = SGetCurrentWindowHeight(app);
+    
+    if (width > 0 && height > 0) {
+        SUpdateViewport(app, width, height);
+    }
+    
     SGetMouseState(app);
         
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -319,18 +345,13 @@ static inline void SBeginFrame(SApplication *app) {
     #endif
 }
 
-
-
-inline void SUpdateViewport(SApplication *app, int width, int height) {
-    glViewport(0, 0, width, height);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, width, height, 0, -1, 1); // Origin at top-left
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+static inline void SEndFrame(SApplication *app) {
+    if (app == NULL || app->display == NULL) {
+        return;
+    }
+    
+    glXSwapBuffers(app->display, app->window);
 }
-
-
 
 #elif defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
@@ -345,7 +366,19 @@ typedef struct {
     HDC hdc;
     HGLRC hglrc;
     MSG msg;
+    float mouseX;
+    float mouseY;
+    int mouseDown;
 } SApplication;
+
+// Forward declarations
+bool initText(const char* fontPath);
+void SUpdateViewport(SApplication *app, int width, int height);
+
+#ifdef IMAGE_H
+extern ImageRenderer* imageRenderer;
+void renderImage(ImageRenderer* renderer);
+#endif
 
 int SDisplayOpen(SApplication *app) {
     if (app == NULL) {
@@ -376,6 +409,10 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         return 0;
     }
     
+    // Initialize mouse state
+    app->mouseX = 0.0f;
+    app->mouseY = 0.0f;
+    app->mouseDown = 0;
 
     app->hwnd = CreateWindowEx(
         0,                          // Optional window styles
@@ -387,7 +424,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         NULL,                       // Parent window    
         NULL,                       // Menu
         app->hinstance,             // Instance handle
-        NULL                        // Additional application data
+        app                         // Additional application data - pass app pointer
     );
     
     if (app->hwnd == NULL) {
@@ -444,11 +481,34 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         return 0;
     }
     
+    // Enable blending for text
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    // Initialize text rendering
+    if (!initText("stdui/internal/courier_new.ttf")) {
+        fprintf(stderr, "ERROR: Failed to initialize text rendering.\n");
+        return 0;
+    }
 
     ShowWindow(app->hwnd, SW_SHOW);
     UpdateWindow(app->hwnd);
     
     return 1;
+}
+
+void SGetMouseState(SApplication *app) {
+    if (app == NULL) {
+        return;
+    }
+    
+    POINT point;
+    if (GetCursorPos(&point) && ScreenToClient(app->hwnd, &point)) {
+        app->mouseX = (float)point.x;
+        app->mouseY = (float)point.y;
+    }
+    
+    app->mouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) ? 1 : 0;
 }
 
 int SEventProcess(SApplication *app) {
@@ -494,8 +554,102 @@ void SDisplayClose(SApplication *app) {
     UnregisterClass("OpenGLWindowClass", app->hinstance);
 }
 
+static inline int SGetCurrentWindowWidth(SApplication *app) {
+    if (app == NULL || app->hwnd == NULL) {
+        return -1;
+    }
+    
+    RECT rect;
+    if (GetClientRect(app->hwnd, &rect)) {
+        return rect.right - rect.left;
+    } else {
+        fprintf(stderr, "Error: Could not retrieve window client area.\n");
+        return -1;
+    }
+}
+
+static inline int SGetCurrentWindowHeight(SApplication *app) {
+    if (app == NULL || app->hwnd == NULL) {
+        return -1;
+    }
+    
+    RECT rect;
+    if (GetClientRect(app->hwnd, &rect)) {
+        return rect.bottom - rect.top;
+    } else {
+        fprintf(stderr, "Error: Could not retrieve window client area.\n");
+        return -1;
+    }
+}
+
+void SUpdateViewport(SApplication *app, int width, int height) {
+    glViewport(0, 0, width, height);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, width, height, 0, -1, 1); // Origin at top-left
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+static inline void SClearScreen(SApplication *app, float r, float g, float b) {
+    glClearColor(r, g, b, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    // Reset model-view matrix
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+static inline void SBeginFrame(SApplication *app) {
+    int width = SGetCurrentWindowWidth(app);
+    int height = SGetCurrentWindowHeight(app);
+    
+    if (width > 0 && height > 0) {
+        SUpdateViewport(app, width, height);
+    }
+    
+    SGetMouseState(app);
+        
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    #ifdef IMAGE_H
+    if (imageRenderer) {
+        renderImage(imageRenderer);
+    }
+    #endif
+}
+
+static inline void SEndFrame(SApplication *app) {
+    if (app == NULL || app->hdc == NULL) {
+        return;
+    }
+    
+    SwapBuffers(app->hdc);
+}
+
+// Store a pointer to the application instance to access in WindowProc
+SApplication* g_app = NULL;
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    // Try to get the app instance from window user data
+    SApplication* app = (SApplication*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    
     switch (uMsg) {
+        case WM_CREATE: {
+            // Save the app pointer passed in CreateWindow
+            CREATESTRUCT* createStruct = (CREATESTRUCT*)lParam;
+            app = (SApplication*)createStruct->lpCreateParams;
+            if (app) {
+                SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR)app);
+                g_app = app; // Backup global pointer
+            }
+            return 0;
+        }
+        
         case WM_CLOSE:
             PostQuitMessage(0);
             return 0;
@@ -504,6 +658,36 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             if (wParam == VK_ESCAPE) {
                 PostQuitMessage(0);
                 return 0;
+            }
+            break;
+            
+        case WM_LBUTTONDOWN:
+            if (app) {
+                app->mouseDown = 1;
+                app->mouseX = (float)LOWORD(lParam);
+                app->mouseY = (float)HIWORD(lParam);
+            } else if (g_app) {
+                g_app->mouseDown = 1;
+                g_app->mouseX = (float)LOWORD(lParam);
+                g_app->mouseY = (float)HIWORD(lParam);
+            }
+            break;
+            
+        case WM_LBUTTONUP:
+            if (app) {
+                app->mouseDown = 0;
+            } else if (g_app) {
+                g_app->mouseDown = 0;
+            }
+            break;
+            
+        case WM_MOUSEMOVE:
+            if (app) {
+                app->mouseX = (float)LOWORD(lParam);
+                app->mouseY = (float)HIWORD(lParam);
+            } else if (g_app) {
+                g_app->mouseX = (float)LOWORD(lParam);
+                g_app->mouseY = (float)HIWORD(lParam);
             }
             break;
             
@@ -517,4 +701,5 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
 #elif defined(__APPLE__) && defined(__MACH__)
 #include <ApplicationServices/ApplicationServices.h>
+// MacOS implementation would go here
 #endif
