@@ -17,8 +17,10 @@
 #if defined(__linux__)
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
-#include <GL/gl.h>
-#include <GL/glx.h>  
+#include <GL/glx.h>
+#include <GL/glxext.h>
+
+typedef GLXContext (*PFNGLXCREATECONTEXTATTRIBSARBPROC)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
 bool initText();
 
