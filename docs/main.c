@@ -7,6 +7,7 @@ int main() {
 
     SApplication app;
 
+
     if (!SDisplayOpen(&app)) {
         return 1;
     }
@@ -28,12 +29,13 @@ int main() {
         // Begin frame
         SBeginFrame(&app);
         
+        
+        SDrawText(&app, "OpenGL Text Rendering Demo", 10, SGetCurrentWindowHeight(app.display, app.window) - 30, 2.0f, 1.0f, 1.0f, 1.0f);
         // Draw widgets
         SDrawSlider(&app, &slider);
         SDrawButton(&app, &button);
         SDrawToggle(&app, &checkbox);
 
-        SDrawText(&app, "OpenGL Text Rendering Demo", 10, SGetCurrentWindowHeight(app.display, app.window) - 30, 2.0f, 1.0f, 1.0f, 1.0f);
         
         // Handle input
         SUpdateSlider(&app, &slider, app.mouseX, app.mouseY, app.mouseDown);

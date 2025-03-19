@@ -380,6 +380,10 @@ bool generateFontTexture(const char* fontPath) {
 }
 
 bool initText(const char* fontPath) {
+
+    const GLubyte* glsl_version = glGetString(GL_SHADING_LANGUAGE_VERSION);
+    //printf("GLSL Version: %s\n", glsl_version);
+
     // Save previous OpenGL state
     GLint prevVAO, prevArrayBuffer, prevProgram;
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
