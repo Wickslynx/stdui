@@ -528,8 +528,8 @@ void SDrawText(SApplication *app, const char* text, float x, float y, float scal
     glUniform3f(glGetUniformLocation(textShader, "textColor"), r, g, b);
 
     // Get window dimensions for projection matrix
-    float windowWidth = (float)SGetCurrentWindowWidth(&app);
-    float windowHeight = (float)SGetCurrentWindowHeight(&app);
+    float windowWidth = (float)SGetCurrentWindowWidth(app);
+    float windowHeight = (float)SGetCurrentWindowHeight(app);
     
     // Setup orthographic projection matrix (screen space)
     GLfloat projection[16] = {
