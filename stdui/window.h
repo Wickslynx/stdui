@@ -20,9 +20,6 @@
 
 typedef GLXContext (*PFNGLXCREATECONTEXTATTRIBSARBPROC)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
 
-// Forward declarations
-bool initText(const char* fontPath);
-void SUpdateViewport(SApplication *app, int width, int height);
 
 typedef struct {
     Display *display;
@@ -36,11 +33,18 @@ typedef struct {
     int mouseDown;
 } SApplication;
 
+// Forward declarations
+bool initText(const char* fontPath);
+void SUpdateViewport(SApplication *app, int width, int height);
+
+
 #ifdef IMAGE_H
 extern ImageRenderer* imageRenderer;
 void renderImage(ImageRenderer* renderer);
 #endif
 
+
+//Implementation of funcs.
 int SDisplayOpen(SApplication *app) {
     if (app == NULL) {
         return 0;
