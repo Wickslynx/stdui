@@ -92,7 +92,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         return 0;
     }
     
-    // Find the best config
+    // Find the best config.
     int best_fbc = -1, worst_fbc = -1, best_num_samp = -1, worst_num_samp = 999;
     for (int i = 0; i < fbcount; ++i) {
         XVisualInfo *vi = glXGetVisualFromFBConfig(app->display, fbc[i]);
@@ -116,19 +116,19 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     GLXFBConfig bestFbc = fbc[best_fbc];
     XFree(fbc);
     
-    // Get a visual
+    // Get a visual.
     XVisualInfo *vi = glXGetVisualFromFBConfig(app->display, bestFbc);
     
-    // Create colormap
+    // Create colormap.
     app->colormap = XCreateColormap(app->display, RootWindow(app->display, app->screen), 
                                     vi->visual, AllocNone);
     
-    // Window attributes
+    // Window attribs.
     XSetWindowAttributes swa;
     swa.colormap = app->colormap;
     swa.event_mask = ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask; //KeyPress, Mouse and Exposure.
     
-    // Create window
+    // Create window.
     app->window = XCreateWindow(app->display, RootWindow(app->display, app->screen), 
                                 x, y, width, height, 0, vi->depth, InputOutput, 
                                 vi->visual, CWColormap | CWEventMask, &swa);
@@ -153,7 +153,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         return 0;
     }
     
-    // Make context current
+    // Make context current.
     if (!glXMakeCurrent(app->display, app->window, app->glx_context)) {
         fprintf(stderr, "ERROR: Failed to make context current.\n");
         XFree(vi);
@@ -204,11 +204,11 @@ void SGetMouseState(SApplication *app) {
                  &win_x_return, &win_y_return,
                  &mask_return);
     
-    // Update mouse position
+    // Update mouse position.
     app->mouseX = (float)win_x_return;
     app->mouseY = (float)win_y_return;
     
-    // Update mouse button state
+    // Update mouse button state.
     app->mouseDown = (mask_return & Button1Mask) ? 1 : 0;
 }
 
@@ -229,14 +229,14 @@ int SEventProcess(SApplication *app) {
                     return 0;
                 }
                 break;
-            case ButtonPress:
+            case ButtonPress: //Button down. (mouse)
                 if (app->event.xbutton.button == Button1) {
                     app->mouseDown = 1;
                     app->mouseX = (float)app->event.xbutton.x;
                     app->mouseY = (float)app->event.xbutton.y;
                 }
                 break;
-            case ButtonRelease:
+            case ButtonRelease: //Button up.  (mouse)
                 if (app->event.xbutton.button == Button1) {
                     app->mouseDown = 0;
                 }
@@ -277,7 +277,7 @@ static inline void SClearScreen(SApplication *app, float r, float g, float b) {
     glClearColor(r, g, b, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    // Reset model-view matrix
+    // Reset view matrix.
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -292,7 +292,7 @@ static inline int SGetCurrentWindowWidth(SApplication *app) {
     unsigned int width, height, borderWidth, depth;
     Window root_return;
     
-    if (XGetGeometry(app->display, app->window, &root_return, &x, &y, &width, &height, &borderWidth, &depth)) {
+    if (XGetGeometry(app->display, app->window, &root_return, &x, &y, &width, &height, &borderWidth, &depth)) { //Notice: Have had problems with this before.
         return width; 
     } else {
         fprintf(stderr, "Error: Could not retrieve window geometry.\n");
@@ -310,7 +310,7 @@ static inline int SGetCurrentWindowHeight(SApplication *app) {
     unsigned int width, height, borderWidth, depth;
     Window root_return;
 
-    if (XGetGeometry(app->display, app->window, &root_return, &x, &y, &width, &height, &borderWidth, &depth)) {
+    if (XGetGeometry(app->display, app->window, &root_return, &x, &y, &width, &height, &borderWidth, &depth)) { //Notice: Have had problems with this before.
         return height;
     } else {
         fprintf(stderr, "Error: Could not retrieve window geometry.\n");
@@ -322,7 +322,7 @@ void SUpdateViewport(SApplication *app, int width, int height) {
     glViewport(0, 0, width, height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, width, height, 0, -1, 1); // Origin at top-left
+    glOrtho(0, width, height, 0, -1, 1); // Origin at top-left.
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
@@ -361,7 +361,7 @@ static inline void SEndFrame(SApplication *app) {
 #elif defined(_WIN32) || defined(_WIN64) 
 #include <windows.h>
 #include <GL/gl.h>
-//THIS windows code was written with an LLM. No idea what it does.
+//THIS windows code was written with an LLM. No idea what it does. (I hate WIN32 API.)
 
 // Window procedure function prototype
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
