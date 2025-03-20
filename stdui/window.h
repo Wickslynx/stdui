@@ -68,7 +68,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         None
     };
     
-    // For framebuffer configuration
+    // For framebuffer configuration (Copied from WIKI)
     static int visual_attribs[] = {
         GLX_X_RENDERABLE    , True,
         GLX_DRAWABLE_TYPE   , GLX_WINDOW_BIT,
@@ -84,7 +84,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         None
     };
     
-    // Get framebuffer configs that match our criteria
+    // Get framebuffer configs that match our criteria Note: No idea what this is.
     int fbcount;
     GLXFBConfig* fbc = glXChooseFBConfig(app->display, app->screen, visual_attribs, &fbcount);
     if (!fbc) {
@@ -126,19 +126,18 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     // Window attributes
     XSetWindowAttributes swa;
     swa.colormap = app->colormap;
-    swa.event_mask = ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask;
+    swa.event_mask = ExposureMask | KeyPressMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask; //KeyPress, Mouse and Exposure.
     
     // Create window
     app->window = XCreateWindow(app->display, RootWindow(app->display, app->screen), 
                                 x, y, width, height, 0, vi->depth, InputOutput, 
                                 vi->visual, CWColormap | CWEventMask, &swa);
     
-    // Set window title
+    // Set window title.
     XStoreName(app->display, app->window, title);
     
-    // Get the function to create OpenGL 3.3 context
-    PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribsARB = 
-        (PFNGLXCREATECONTEXTATTRIBSARBPROC) glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
+    // Get the function to create OpenGL 3.3 context. Note: Who made these names? They are stupid.
+    PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribsARB = (PFNGLXCREATECONTEXTATTRIBSARBPROC) glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
     
     if (!glXCreateContextAttribsARB) {
         fprintf(stderr, "ERROR: glXCreateContextAttribsARB() not found\n");
@@ -147,37 +146,41 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         app->glx_context = glXCreateContextAttribsARB(app->display, bestFbc, NULL, True, context_attribs);
     }
     
-    // Verify context
+    // Verify context.
     if (!app->glx_context) {
-        fprintf(stderr, "ERROR: Failed to create OpenGL context\n");
+        fprintf(stderr, "ERROR: Failed to create OpenGL context.\n");
         XFree(vi);
         return 0;
     }
     
     // Make context current
     if (!glXMakeCurrent(app->display, app->window, app->glx_context)) {
-        fprintf(stderr, "ERROR: Failed to make context current\n");
+        fprintf(stderr, "ERROR: Failed to make context current.\n");
         XFree(vi);
         return 0;
     }
     
-    // Map window
+    // Map window.
     XMapWindow(app->display, app->window);
     
     
     const char* version = (const char*)glGetString(GL_VERSION);
     const char* shaderVersion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
 
-    // Enable blending for text
+    // Enable blending for text.
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
-    // Initialize text rendering
+    // Initialize text rendering.
     if (!initText("stdui/internal/courier_new.ttf")) {
         fprintf(stderr, "ERROR: Failed to initialize text rendering.\n");
         XFree(vi);
         return 0;
     }
+
+    #ifdef STDUI_VERBAL_DEBUG
+    printf("Window created with code 0: \n OpenGL version: %s\n GLSL version: %s", version, shaderVersion)
+    #endif
     
     XFree(vi);
     XFlush(app->display);
@@ -355,9 +358,10 @@ static inline void SEndFrame(SApplication *app) {
     glXSwapBuffers(app->display, app->window);
 }
 
-#elif defined(_WIN32) || defined(_WIN64)
+#elif defined(_WIN32) || defined(_WIN64) 
 #include <windows.h>
 #include <GL/gl.h>
+//THIS windows code was written with an LLM. No idea what it does.
 
 // Window procedure function prototype
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
