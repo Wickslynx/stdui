@@ -52,6 +52,9 @@ int SDisplayOpen(SApplication *app) {
         fprintf(stderr, "ERROR: Unable to open X11 display.\n");
         return 0;
     }
+    #ifdef STDUI_VERBAL_DEBUG
+    printf("Opened Display with code 0:");
+    #endif
     app->screen = DefaultScreen(app->display);
     return 1;
 }
