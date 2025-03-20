@@ -18,8 +18,6 @@
 #include <GL/glxext.h>
 #include <GL/gl.h>
 
-typedef GLXContext (*PFNGLXCREATECONTEXTATTRIBSARBPROC)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
-
 
 typedef struct {
     Display *display;
@@ -33,9 +31,9 @@ typedef struct {
     int mouseDown;
 } SApplication;
 
-// Forward declarations
+// Forward declarations from other files (widget.h and image.h)
 bool initText(const char* fontPath);
-void SUpdateViewport(SApplication *app, int width, int height);
+
 
 
 #ifdef IMAGE_H
