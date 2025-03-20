@@ -179,7 +179,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     }
 
     #ifdef STDUI_VERBAL_DEBUG
-    printf("Window created with code 0: \n OpenGL version: %s\n GLSL version: %s", version, shaderVersion)
+    printf("Window created with code 0: \n OpenGL version: %s\n GLSL version: %s", version, shaderVersion);
     #endif
     
     XFree(vi);
