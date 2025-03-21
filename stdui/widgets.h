@@ -582,23 +582,6 @@ void SCircle(SApplication *app, const SShapeProps *props) {
 
 //GLOBAL stuff that dosen't care about version.
 
-void SDrawTriangle(SApplication *app, float color[3], float posX, float posY, float size) {
-    SColor c = SCreateColorFromArray(color, 1.0f);
-    SShapeProps props = {posX, posY, size, size, 0.0f, c};
-    STriangle(app, &props);
-}
-
-void SDrawRectangle(SApplication *app, float color[3], float posX, float posY, float width, float height) {
-    SColor c = SCreateColorFromArray(color, 1.0f);
-    SShapeProps props = {posX, posY, width, height, 0.0f, c};
-    SRectangle(app, &props);
-}
-
-void SDrawCircle(SApplication *app, float color[3], float posX, float posY, float radius) {
-    SColor c = SCreateColorFromArray(color, 1.0f);
-    SShapeProps props = {posX, posY, radius*2, radius*2, 0.0f, c};
-    SCircle(app, &props);
-}
 
 void checkGLSLVersion() { //Easy stuff to prevent a random error.
     const GLubyte* versionStr = glGetString(GL_SHADING_LANGUAGE_VERSION);
