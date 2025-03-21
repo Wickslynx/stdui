@@ -67,23 +67,7 @@ unsigned char* loadImage(const char* filename, int* width, int* height, int* cha
 }
 
 
-// Shader compilation utilities
-static GLuint compileShader(const char* source, GLenum type) {
-    GLuint shader = glCreateShader(type);
-    glShaderSource(shader, 1, &source, NULL);
-    glCompileShader(shader);
-    
-    // Check for compilation errors
-    GLint success;
-    char infoLog[512];
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        glGetShaderInfoLog(shader, 512, NULL, infoLog);
-        fprintf(stderr, "ERROR::SHADER::COMPILATION_FAILED\n%s\n", infoLog);
-    }
-    
-    return shader;
-}
+
 
 // Renamed function to avoid name conflict with widgets.h
 static GLuint createImageShaderProgram() {
