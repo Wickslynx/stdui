@@ -325,7 +325,12 @@ void checkGLSLVersion() { //Easy stuff to prevent a random error.
         exit(EXIT_FAILURE);
     }
 }
-
+void SGL_Error(const char* operation) {
+    GLenum error;
+    while ((error = glGetError()) != GL_NO_ERROR) {
+        fprintf(stderr, "OpenGL error after %s: 0x%x\n", operation, error);
+    }
+}
 
 
 // Global variables for text rendering
