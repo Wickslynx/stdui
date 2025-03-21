@@ -85,6 +85,32 @@ static GLuint compileShader(const char* source, GLenum type) {
     return shader;
 }
 
+// Renamed function to avoid name conflict with widgets.h
+static GLuint createImageShaderProgram() {
+    GLuint vertexShader = compileShader(vertexShaderSource, GL_VERTEX_SHADER);
+    GLuint fragmentShader = compileShader(fragmentShaderSource, GL_FRAGMENT_SHADER);
+    
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+    
+    // Check for linking errors
+    GLint success;
+    char infoLog[512];
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        fprintf(stderr, "ERROR::SHADER::PROGRAM::LINKING_FAILED\n%s\n", infoLog);
+    }
+    
+    // Delete shaders as they're linked into our program and no longer necessary
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+    
+    return shaderProgram;
+}
+
 ImageRenderer* createImageRenderer(const char* filename, int width, int height, float posX, float posY) {
     ImageRenderer* renderer = (ImageRenderer*)malloc(sizeof(ImageRenderer));
     if (!renderer) return NULL;
@@ -107,8 +133,8 @@ ImageRenderer* createImageRenderer(const char* filename, int width, int height, 
                  channels == 4 ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
     stbi_image_free(data);
 
-    // Create shader program
-    renderer->shaderProgram = createShaderProgram();
+    // Create shader program - updated to use the renamed function
+    renderer->shaderProgram = createImageShaderProgram();
 
     // Vertex data with dynamic position
     float vertices[] = {
