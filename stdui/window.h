@@ -12,6 +12,9 @@
 #endif
 
 #if defined(__linux__)
+
+#define GL_VERSION_3_3
+
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <GL/glx.h>
