@@ -338,7 +338,7 @@ void SUpdateViewport(SApplication *app, int width, int height) {
 static inline void SBeginFrame(SApplication *app) {
 
     #ifdef STDUI_VERBAL_DEBUG
-    printf("STATUS: Entering Rendering Loop \n);
+    printf("STATUS: Entering Rendering Loop \n");
     #endif
     
     int width = SGetCurrentWindowWidth(app);
