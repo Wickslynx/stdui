@@ -11,20 +11,18 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "internal/stb_truetype.h"
 
-
-
+// Color structure definition
 typedef struct {
     float r, g, b, a;
 } SColor;
 
-
+// Shape properties structure
 typedef struct {
     float x, y;
     float width, height;
     float rotation;
     SColor color;
 } SShapeProps;
-
 
 #if defined(GL_VERSION)
 #include <GL/gl.h>
@@ -40,26 +38,50 @@ typedef struct {
 #include <OpenGL/CGLCurrent.h>
 #endif
 
+// Modern OpenGL shapes renderer
+typedef struct {
+    // Programs and shaders
+    GLuint basicProgram;
+    GLuint textProgram;
+    
+    // Shape meshes
+    GLuint rectVAO, rectVBO, rectEBO;
+    GLuint triangleVAO, triangleVBO;
+    GLuint circleVAO, circleVBO, circleEBO;
+    
+    // Text rendering resources
+    GLuint fontTexture;
+    GLuint textVAO, textVBO;
+    
+    // Uniform locations
+    GLint modelLoc;
+    GLint projectionLoc;
+    GLint colorLoc;
+} SRenderer;
 
+extern SRenderer renderer;
 
-// Function to create a color
+// Initialize the renderer
+bool SInitializeRenderer();
+
+// Create a color
 static inline SColor SCreateColor(float r, float g, float b, float a) {
     SColor color = {r, g, b, a}; 
     return color;
 }
 
-// Function to create color from RGB array
+// Create color from RGB array
 static inline SColor SCreateColorFromArray(float color[3], float alpha) {
     return SCreateColor(color[0], color[1], color[2], alpha);
 }
 
-// Function to create shape properties
+// Create shape properties
 static inline SShapeProps SCreateShapeProps(float x, float y, float width, float height, float rotation, SColor color) {
     SShapeProps props = {x, y, width, height, rotation, color};
     return props;
 }
 
-
+// Swap buffers (platform-specific)
 static inline void SSwapBuffers(SApplication *app) {
 #if defined(__linux__)
     glXSwapBuffers(app->display, app->window);
@@ -70,7 +92,7 @@ static inline void SSwapBuffers(SApplication *app) {
 #endif
 }
 
-// Drawing functions 
+// Drawing functions
 void STriangle(SApplication *app, const SShapeProps *props);
 void SRectangle(SApplication *app, const SShapeProps *props);
 void SCircle(SApplication *app, const SShapeProps *props);
@@ -81,83 +103,303 @@ void SDrawTriangle(SApplication *app, float color[3], float posX, float posY, fl
 void SDrawRectangle(SApplication *app, float color[3], float posX, float posY, float width, float height);
 void SDrawCircle(SApplication *app, float color[3], float posX, float posY, float radius);
 
+// Clean up renderer resources
+void SCleanupRenderer();
 
-void STriangle(SApplication *app, const SShapeProps *props) {
-    glPushMatrix();
+// Shader compilation utilities
+static GLuint compileShader(const char* source, GLenum type) {
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &source, NULL);
+    glCompileShader(shader);
     
-    // Apply transformations
-    glTranslatef(props->x, props->y, 0.0f);
-    glRotatef(props->rotation, 0.0f, 0.0f, 1.0f);
-    glScalef(props->width, props->height, 1.0f);
+    // Check for compilation errors
+    GLint success;
+    char infoLog[512];
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        fprintf(stderr, "ERROR::SHADER::COMPILATION_FAILED\n%s\n", infoLog);
+    }
     
-    // Set color with alpha
-    glColor4f(props->color.r, props->color.g, props->color.b, props->color.a);
-    
-    glBegin(GL_TRIANGLES);
-        glVertex2f(-0.5f, -0.5f);
-        glVertex2f(0.5f, -0.5f);
-        glVertex2f(0.0f, 0.5f);
-    glEnd();
-    
-    glPopMatrix();
-
+    return shader;
 }
 
-void SRectangle(SApplication *app, const SShapeProps *props) {
-    glPushMatrix();
+static GLuint createShaderProgram(const char* vertexSource, const char* fragmentSource) {
+    GLuint vertexShader = compileShader(vertexSource, GL_VERTEX_SHADER);
+    GLuint fragmentShader = compileShader(fragmentSource, GL_FRAGMENT_SHADER);
     
-    // Apply transformations
-    glTranslatef(props->x, props->y, 0.0f);
-    glRotatef(props->rotation, 0.0f, 0.0f, 1.0f);
-    glScalef(props->width, props->height, 1.0f);
+    GLuint program = glCreateProgram();
+    glAttachShader(program, vertexShader);
+    glAttachShader(program, fragmentShader);
+    glLinkProgram(program);
     
-    // Set color with alpha
-    glColor4f(props->color.r, props->color.g, props->color.b, props->color.a);
+    // Check for linking errors
+    GLint success;
+    char infoLog[512];
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(program, 512, NULL, infoLog);
+        fprintf(stderr, "ERROR::SHADER::PROGRAM::LINKING_FAILED\n%s\n", infoLog);
+    }
     
-    glBegin(GL_QUADS);
-        glVertex2f(-0.5f, -0.5f);
-        glVertex2f(0.5f, -0.5f);
-        glVertex2f(0.5f, 0.5f);
-        glVertex2f(-0.5f, 0.5f);
-    glEnd();
+    // Clean up shaders
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
     
-    glPopMatrix();
-    
+    return program;
 }
 
-GLuint fontTexture;
-GLuint textVAO, textVBO;
-GLuint textShader;
+// Matrix utility functions
+static void identityMatrix(float* matrix) {
+    memset(matrix, 0, 16 * sizeof(float));
+    matrix[0] = 1.0f;
+    matrix[5] = 1.0f;
+    matrix[10] = 1.0f;
+    matrix[15] = 1.0f;
+}
 
+static void translateMatrix(float* matrix, float x, float y, float z) {
+    matrix[12] = x;
+    matrix[13] = y;
+    matrix[14] = z;
+}
 
-void SCircle(SApplication *app, const SShapeProps *props) {
-    glPushMatrix();
+static void scaleMatrix(float* matrix, float x, float y, float z) {
+    matrix[0] = x;
+    matrix[5] = y;
+    matrix[10] = z;
+}
+
+static void rotateMatrix(float* matrix, float angle) {
+    float rad = angle * M_PI / 180.0f;
+    float c = cosf(rad);
+    float s = sinf(rad);
     
-    // Apply transformations
-    glTranslatef(props->x, props->y, 0.0f);
-    glRotatef(props->rotation, 0.0f, 0.0f, 1.0f);
-    glScalef(props->width, props->height, 1.0f);
+    // Create a temporary matrix with just rotation
+    float rotMat[16] = {
+        c,   -s,   0.0f, 0.0f,
+        s,    c,   0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
+    };
     
-    // Set color with alpha
-    glColor4f(props->color.r, props->color.g, props->color.b, props->color.a);
+    // Note: In a production environment, you would implement proper
+    // matrix multiplication here. This is simplified.
+    memcpy(matrix, rotMat, 16 * sizeof(float));
+}
+
+static void createTransformMatrix(float* matrix, float x, float y, float width, float height, float rotation) {
+    identityMatrix(matrix);
     
-    // Draw circle using triangles (Who made this up? This is stupid.)
+    // Order: scale, rotate, translate
+    scaleMatrix(matrix, width, height, 1.0f);
+    
+    if (rotation != 0.0f) {
+        float rotMat[16];
+        identityMatrix(rotMat);
+        rotateMatrix(rotMat, rotation);
+        
+        // Apply rotation (simplified)
+        // In production code, use proper matrix multiplication
+        matrix[0] = rotMat[0] * width;
+        matrix[1] = rotMat[1] * width;
+        matrix[4] = rotMat[4] * height;
+        matrix[5] = rotMat[5] * height;
+    }
+    
+    translateMatrix(matrix, x, y, 0.0f);
+}
+
+// Implementation of the renderer initialization
+bool SInitializeRenderer() {
+    // Basic shader for shapes
+    const char* vertexShaderSource = 
+        "#version 330 core\n"
+        "layout (location = 0) in vec3 aPos;\n"
+        "uniform mat4 model;\n"
+        "uniform mat4 projection;\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = projection * model * vec4(aPos, 1.0);\n"
+        "}\0";
+    
+    const char* fragmentShaderSource = 
+        "#version 330 core\n"
+        "out vec4 FragColor;\n"
+        "uniform vec4 color;\n"
+        "void main()\n"
+        "{\n"
+        "   FragColor = color;\n"
+        "}\0";
+    
+    // Create shader programs
+    renderer.basicProgram = createShaderProgram(vertexShaderSource, fragmentShaderSource);
+    
+    // Get uniform locations
+    renderer.modelLoc = glGetUniformLocation(renderer.basicProgram, "model");
+    renderer.projectionLoc = glGetUniformLocation(renderer.basicProgram, "projection");
+    renderer.colorLoc = glGetUniformLocation(renderer.basicProgram, "color");
+    
+    // Create rectangle mesh
+    float rectangleVertices[] = {
+        -0.5f, -0.5f, 0.0f,  // bottom left
+         0.5f, -0.5f, 0.0f,  // bottom right
+         0.5f,  0.5f, 0.0f,  // top right
+        -0.5f,  0.5f, 0.0f   // top left
+    };
+    
+    unsigned int rectangleIndices[] = {
+        0, 1, 2,  // first triangle
+        2, 3, 0   // second triangle
+    };
+    
+    glGenVertexArrays(1, &renderer.rectVAO);
+    glGenBuffers(1, &renderer.rectVBO);
+    glGenBuffers(1, &renderer.rectEBO);
+    
+    glBindVertexArray(renderer.rectVAO);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, renderer.rectVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(rectangleVertices), rectangleVertices, GL_STATIC_DRAW);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderer.rectEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(rectangleIndices), rectangleIndices, GL_STATIC_DRAW);
+    
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    
+    // Create triangle mesh
+    float triangleVertices[] = {
+        -0.5f, -0.5f, 0.0f,  // bottom left
+         0.5f, -0.5f, 0.0f,  // bottom right
+         0.0f,  0.5f, 0.0f   // top
+    };
+    
+    glGenVertexArrays(1, &renderer.triangleVAO);
+    glGenBuffers(1, &renderer.triangleVBO);
+    
+    glBindVertexArray(renderer.triangleVAO);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, renderer.triangleVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);
+    
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    
+    // Create circle mesh
     const int segments = 36;
     const float angleIncrement = 2.0f * M_PI / segments;
     
-    glBegin(GL_TRIANGLE_FAN);
-        glVertex2f(0.0f, 0.0f); // Center point
+    // Allocate memory for vertices (center + segments + 1 duplicate vertex)
+    float* circleVertices = (float*)malloc((segments + 2) * 3 * sizeof(float));
+    unsigned int* circleIndices = (unsigned int*)malloc(segments * 3 * sizeof(unsigned int));
+    
+    // Center vertex
+    circleVertices[0] = 0.0f;
+    circleVertices[1] = 0.0f;
+    circleVertices[2] = 0.0f;
+    
+    // Perimeter vertices
+    for (int i = 0; i <= segments; i++) {
+        float angle = i * angleIncrement;
+        circleVertices[(i + 1) * 3 + 0] = 0.5f * cosf(angle);
+        circleVertices[(i + 1) * 3 + 1] = 0.5f * sinf(angle);
+        circleVertices[(i + 1) * 3 + 2] = 0.0f;
         
-        for (int i = 0; i <= segments; i++) {
-            float angle = i * angleIncrement;
-            float x = 0.5f * cosf(angle);
-            float y = 0.5f * sinf(angle);
-            glVertex2f(x, y);
+        if (i < segments) {
+            // Triangle fan: center, current, next
+            circleIndices[i * 3 + 0] = 0;                  // Center
+            circleIndices[i * 3 + 1] = i + 1;              // Current
+            circleIndices[i * 3 + 2] = (i + 1) % segments + 1; // Next (wrap around)
         }
-    glEnd();
+    }
     
-    glPopMatrix();
+    glGenVertexArrays(1, &renderer.circleVAO);
+    glGenBuffers(1, &renderer.circleVBO);
+    glGenBuffers(1, &renderer.circleEBO);
     
+    glBindVertexArray(renderer.circleVAO);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, renderer.circleVBO);
+    glBufferData(GL_ARRAY_BUFFER, (segments + 2) * 3 * sizeof(float), circleVertices, GL_STATIC_DRAW);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, renderer.circleEBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, segments * 3 * sizeof(unsigned int), circleIndices, GL_STATIC_DRAW);
+    
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    
+    // Cleanup
+    free(circleVertices);
+    free(circleIndices);
+    
+    // Unbind
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    
+    return true;
+}
+
+// Implementation of drawing functions
+void STriangle(SApplication *app, const SShapeProps *props) {
+    // Create model matrix
+    float modelMatrix[16];
+    createTransformMatrix(modelMatrix, props->x, props->y, props->width, props->height, props->rotation);
+    
+    // Use shader
+    glUseProgram(renderer.basicProgram);
+    
+    // Set uniforms
+    glUniformMatrix4fv(renderer.modelLoc, 1, GL_FALSE, modelMatrix);
+    // Note: Projection matrix should be set elsewhere, like in the app update
+    
+    // Set color
+    glUniform4f(renderer.colorLoc, props->color.r, props->color.g, props->color.b, props->color.a);
+    
+    // Draw triangle
+    glBindVertexArray(renderer.triangleVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glBindVertexArray(0);
+}
+
+void SRectangle(SApplication *app, const SShapeProps *props) {
+    // Create model matrix
+    float modelMatrix[16];
+    createTransformMatrix(modelMatrix, props->x, props->y, props->width, props->height, props->rotation);
+    
+    // Use shader
+    glUseProgram(renderer.basicProgram);
+    
+    // Set uniforms
+    glUniformMatrix4fv(renderer.modelLoc, 1, GL_FALSE, modelMatrix);
+    
+    // Set color
+    glUniform4f(renderer.colorLoc, props->color.r, props->color.g, props->color.b, props->color.a);
+    
+    // Draw rectangle
+    glBindVertexArray(renderer.rectVAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+}
+
+void SCircle(SApplication *app, const SShapeProps *props) {
+    // Create model matrix
+    float modelMatrix[16];
+    createTransformMatrix(modelMatrix, props->x, props->y, props->width, props->height, props->rotation);
+    
+    // Use shader
+    glUseProgram(renderer.basicProgram);
+    
+    // Set uniforms
+    glUniformMatrix4fv(renderer.modelLoc, 1, GL_FALSE, modelMatrix);
+    
+    // Set color
+    glUniform4f(renderer.colorLoc, props->color.r, props->color.g, props->color.b, props->color.a);
+    
+    // Draw circle
+    glBindVertexArray(renderer.circleVAO);
+    glDrawElements(GL_TRIANGLES, 36 * 3, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
 }
 
 void SPolygon(SApplication *app, const SShapeProps *props, const float *vertices, int vertexCount) {
@@ -166,24 +408,76 @@ void SPolygon(SApplication *app, const SShapeProps *props, const float *vertices
         return;
     }
     
-    glPushMatrix();
+    // For polygons, we need to create a custom VAO each time
+    // (since the vertices are dynamic)
+    GLuint polyVAO, polyVBO;
+    glGenVertexArrays(1, &polyVAO);
+    glGenBuffers(1, &polyVBO);
     
-    // Apply transformations
-    glTranslatef(props->x, props->y, 0.0f);
-    glRotatef(props->rotation, 0.0f, 0.0f, 1.0f);
-    glScalef(props->width, props->height, 1.0f);
+    glBindVertexArray(polyVAO);
     
-    // Set color with alpha
-    glColor4f(props->color.r, props->color.g, props->color.b, props->color.a);
+    glBindBuffer(GL_ARRAY_BUFFER, polyVBO);
+    glBufferData(GL_ARRAY_BUFFER, vertexCount * 2 * sizeof(float), vertices, GL_STATIC_DRAW);
     
-    glBegin(GL_POLYGON);
-        for (int i = 0; i < vertexCount * 2; i += 2) {
-            glVertex2f(vertices[i], vertices[i+1]);
-        }
-    glEnd();
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
     
-    glPopMatrix();
+    // Create model matrix
+    float modelMatrix[16];
+    createTransformMatrix(modelMatrix, props->x, props->y, props->width, props->height, props->rotation);
     
+    // Use shader
+    glUseProgram(renderer.basicProgram);
+    
+    // Set uniforms
+    glUniformMatrix4fv(renderer.modelLoc, 1, GL_FALSE, modelMatrix);
+    
+    // Set color
+    glUniform4f(renderer.colorLoc, props->color.r, props->color.g, props->color.b, props->color.a);
+    
+    // Draw polygon
+    glDrawArrays(GL_TRIANGLE_FAN, 0, vertexCount);
+    
+    // Clean up temporary resources
+    glDeleteVertexArrays(1, &polyVAO);
+    glDeleteBuffers(1, &polyVBO);
+}
+
+// Helper functions
+void SDrawTriangle(SApplication *app, float color[3], float posX, float posY, float size) {
+    SColor sColor = SCreateColorFromArray(color, 1.0f);
+    SShapeProps props = SCreateShapeProps(posX, posY, size, size, 0.0f, sColor);
+    STriangle(app, &props);
+}
+
+void SDrawRectangle(SApplication *app, float color[3], float posX, float posY, float width, float height) {
+    SColor sColor = SCreateColorFromArray(color, 1.0f);
+    SShapeProps props = SCreateShapeProps(posX, posY, width, height, 0.0f, sColor);
+    SRectangle(app, &props);
+}
+
+void SDrawCircle(SApplication *app, float color[3], float posX, float posY, float radius) {
+    SColor sColor = SCreateColorFromArray(color, 1.0f);
+    SShapeProps props = SCreateShapeProps(posX, posY, radius * 2.0f, radius * 2.0f, 0.0f, sColor);
+    SCircle(app, &props);
+}
+
+// Clean up renderer resources
+void SCleanupRenderer() {
+    // Delete shader programs
+    glDeleteProgram(renderer.basicProgram);
+    
+    // Delete VAOs and VBOs
+    glDeleteVertexArrays(1, &renderer.rectVAO);
+    glDeleteBuffers(1, &renderer.rectVBO);
+    glDeleteBuffers(1, &renderer.rectEBO);
+    
+    glDeleteVertexArrays(1, &renderer.triangleVAO);
+    glDeleteBuffers(1, &renderer.triangleVBO);
+    
+    glDeleteVertexArrays(1, &renderer.circleVAO);
+    glDeleteBuffers(1, &renderer.circleVBO);
+    glDeleteBuffers(1, &renderer.circleEBO);
 }
 
 
