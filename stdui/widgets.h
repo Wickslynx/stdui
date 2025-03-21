@@ -58,8 +58,7 @@ typedef struct {
     GLint projectionLoc;
     GLint colorLoc;
 } SRenderer;
-
-extern SRenderer renderer;
+SRenderer renderer;
 
 // Initialize the renderer
 bool SInitializeRenderer();
