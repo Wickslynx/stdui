@@ -53,8 +53,9 @@ int SDisplayOpen(SApplication *app) {
         return 0;
     }
     #ifdef STDUI_VERBAL_DEBUG
-    printf("Opened Display with code 0:");
+    printf("STATUS: Opened Display with code 0. \n");
     #endif
+    
     app->screen = DefaultScreen(app->display);
     return 1;
 }
@@ -182,7 +183,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     }
 
     #ifdef STDUI_VERBAL_DEBUG
-    printf("Window created with code 0: \n OpenGL version: %s\n GLSL version: %s", version, shaderVersion);
+    printf("STATUS: Window created with code 0: \n OpenGL version: %s\n GLSL version: %s \n", version, shaderVersion);
     #endif
     
     XFree(vi);
@@ -220,6 +221,10 @@ int SEventProcess(SApplication *app) {
     if (app == NULL) {
         return 0;
     }
+
+    #ifdef STDUI_VERBAL_DEBUG
+    printf("STATUS: Started processing events.");
+    #endif
     
     if (XPending(app->display) > 0) {
         XNextEvent(app->display, &app->event);
@@ -331,6 +336,11 @@ void SUpdateViewport(SApplication *app, int width, int height) {
 }
 
 static inline void SBeginFrame(SApplication *app) {
+
+    #ifdef STDUI_VERBAL_DEBUG
+    printf("STATUS: Entering Rendering Loop \n);
+    #endif
+    
     int width = SGetCurrentWindowWidth(app);
     int height = SGetCurrentWindowHeight(app);
     
