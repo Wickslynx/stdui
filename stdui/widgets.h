@@ -38,7 +38,7 @@ typedef struct {
 #include <OpenGL/CGLCurrent.h>
 #endif
 
-// Modern OpenGL shapes renderer
+
 typedef struct {
     // Programs and shaders
     GLuint basicProgram;
