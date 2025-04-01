@@ -889,4 +889,4 @@ void SDrawText(SApplication *app, const char* text, float x, float y, float scal
     glUseProgram(prevProgram);
 }
 
-#endif 
+#endif //WIDGETS_H 
