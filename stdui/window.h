@@ -738,5 +738,5 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 
 #elif defined(__APPLE__) && defined(__MACH__)
 #include <ApplicationServices/ApplicationServices.h>
-// MacOS implementation would go here
+//TODO: MACOS :sob:
 #endif
