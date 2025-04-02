@@ -184,6 +184,12 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     // Enable blending for text.
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+     if (!SInitializeRenderer()) {
+        fprintf(stderr, "ERROR: Failed to initialize rendering.")
+        XFree(vi);
+        return 0;
+    }
     
     // Initialize text rendering.
     if (!initText("stdui/internal/courier_new.ttf")) {
@@ -191,6 +197,8 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         XFree(vi);
         return 0;
     }
+
+   
 
     #ifdef STDUI_VERBAL_DEBUG
     printf("STATUS: Window created with code 0: \n OpenGL version: %s\n GLSL version: %s \n", version, shaderVersion);
