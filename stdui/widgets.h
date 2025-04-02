@@ -148,7 +148,21 @@ static GLuint createShaderProgram(const char* vertexSource, const char* fragment
 }
 
 
-// Matrix utility functions
+#include <math.h>
+#include <string.h> // For memset and memcpy
+
+// Helper function for matrix multiplication (result = a * b)
+static void multiplyMatrix(float* result, const float* a, const float* b) {
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            result[i * 4 + j] = 0.0f;
+            for (int k = 0; k < 4; ++k) {
+                result[i * 4 + j] += a[i * 4 + k] * b[k * 4 + j];
+            }
+        }
+    }
+}
+
 static void identityMatrix(float* matrix) {
     memset(matrix, 0, 16 * sizeof(float));
     matrix[0] = 1.0f;
@@ -158,56 +172,46 @@ static void identityMatrix(float* matrix) {
 }
 
 static void translateMatrix(float* matrix, float x, float y, float z) {
-    matrix[12] = x;
-    matrix[13] = y;
-    matrix[14] = z;
+    float translationMatrix[16];
+    identityMatrix(translationMatrix);
+    translationMatrix[12] = x;
+    translationMatrix[13] = y;
+    translationMatrix[14] = z;
+    multiplyMatrix(matrix, matrix, translationMatrix);
 }
 
 static void scaleMatrix(float* matrix, float x, float y, float z) {
-    matrix[0] = x;
-    matrix[5] = y;
-    matrix[10] = z;
+    float scaleMatrix[16];
+    identityMatrix(scaleMatrix);
+    scaleMatrix[0] = x;
+    scaleMatrix[5] = y;
+    scaleMatrix[10] = z;
+    multiplyMatrix(matrix, matrix, scaleMatrix);
 }
 
 static void rotateMatrix(float* matrix, float angle) {
     float rad = angle * M_PI / 180.0f;
     float c = cosf(rad);
     float s = sinf(rad);
-    
-    // Create a temporary matrix with just rotation
-    float rotMat[16] = {
-        c,   -s,   0.0f, 0.0f,
-        s,    c,   0.0f, 0.0f,
+
+    float rotationMatrix[16] = {
+        c,   -s,  0.0f, 0.0f,
+        s,    c,  0.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 0.0f,
         0.0f, 0.0f, 0.0f, 1.0f
     };
-    
-    // Note: In a production environment, you would implement proper
-    // matrix multiplication here. This is simplified.
-    memcpy(matrix, rotMat, 16 * sizeof(float));
+    multiplyMatrix(matrix, matrix, rotationMatrix);
 }
 
 static void createTransformMatrix(float* matrix, float x, float y, float width, float height, float rotation) {
     identityMatrix(matrix);
-    
-    // Order: scale, rotate, translate
-    scaleMatrix(matrix, width, height, 1.0f);
-    
-    if (rotation != 0.0f) {
-        float rotMat[16];
-        identityMatrix(rotMat);
-        rotateMatrix(rotMat, rotation);
-        
-        // Apply rotation (simplified)
-        // In production code, use proper matrix multiplication
-        matrix[0] = rotMat[0] * width;
-        matrix[1] = rotMat[1] * width;
-        matrix[4] = rotMat[4] * height;
-        matrix[5] = rotMat[5] * height;
-    }
-    
+
+    // Order: translate, rotate, scale (this is a common order)
     translateMatrix(matrix, x, y, 0.0f);
+    rotateMatrix(matrix, rotation);
+    scaleMatrix(matrix, width, height, 1.0f);
 }
+
 
 // Implementation of the renderer initialization
 bool SInitializeRenderer() {
