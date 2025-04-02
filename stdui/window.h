@@ -4,9 +4,11 @@
 #endif
 
 
-#if defined(__linux__) && defined(__ANDROID__)
 #ifndef STDUI_NO_STDLIB
-printf("WARNING! Are you running this on a chromebook? (Termux)")
+void SInternalOSCheck() {
+    #if defined(__linux__) && defined(__ANDROID__)
+        printf("!WARNING!: Are you running this on a chromebook using Termux? You might encounter errors with X11 not being found.")
+}
 #endif
 
 #elif defined(__linux__)
