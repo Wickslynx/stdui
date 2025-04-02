@@ -17,11 +17,6 @@ int main() {
         return 1;
     }
 
- 
-    
-    SSlider slider = SCreateSlider(200, 50, 150, 20, 0, 100, 50);
-    SButton button = SCreateButton(200, 100, 100, 30, "Click Me");
-    SToggle checkbox = SCreateToggle(200, 150, 20, 20, "Enable Feature", false);
     
 
     // Main loop
@@ -31,17 +26,7 @@ int main() {
         
         
         SDrawText(&app, "OpenGL Text Rendering Demo", 10, SGetCurrentWindowHeight(&app) - 30, 2.0f, 1.0f, 1.0f, 1.0f);
-        // Draw widgets
-        SDrawSlider(&app, &slider);
-        SDrawButton(&app, &button);
-        SDrawToggle(&app, &checkbox);
-
-        
-        // Handle input
-        SUpdateSlider(&app, &slider, app.mouseX, app.mouseY, app.mouseDown);
-        SUpdateButton(&app, &button, app.mouseX, app.mouseY, app.mouseDown);
-        SUpdateToggle(&app, &checkbox, app.mouseX, app.mouseY, app.mouseDown);
-
+      
 
         SDrawTriangle(&app, blue, 100.0f, 150.0f, 50.0f);   
         SDrawRectangle(&app, red, 200.0f, 150.0f, 40.0f, 40.0f);  
