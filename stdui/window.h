@@ -1,8 +1,15 @@
 // Global stuff declared here.
+#ifndef STDUI_NO_STDLIB
 #include <stdio.h>
-#include <stdbool.h>
+#endif
 
-#if defined(__linux__)
+
+#if defined(__linux__) && defined(__ANDROID__)
+#ifndef STDUI_NO_STDLIB
+printf("WARNING! Are you running this on a chromebook? (Termux)")
+#endif
+
+#elif defined(__linux__)
     #pragma comment(lib, "X11")
     #pragma comment(lib, "GL")
 #elif defined(_WIN32) || defined(_WIN64)
