@@ -2,17 +2,15 @@
 #ifndef STDUI_NO_STDLIB
 #include <stdio.h>
 #include <stdbool.h>
-#endif
+#endif 
 
 
-#if defined(__linux__)
-    #pragma comment(lib, "X11")
-    #pragma comment(lib, "GL")
-#elif defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64)
     #pragma comment(lib, "opengl32.lib")
     #pragma comment(lib, "gdi32.lib")
     #pragma comment(lib, "user32.lib")
 #endif
+
 
 #if defined(__linux__)
 
@@ -39,9 +37,7 @@ typedef struct {
 
 // Forward declarations from other files (widget.h and image.h)
 bool initText(const char* fontPath);
-bool SInitializeRenderer();
-
-
+bool SInitializeRenderer(); /
 
 #ifdef IMAGE_H
 extern ImageRenderer* imageRenderer;
@@ -72,6 +68,13 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         return 0;
     }
     
+    // Check that the required GLX extension is available
+    const char* glxExtensions = glXQueryExtensionsString(app->display, app->screen);
+    if (!strstr(glxExtensions, "GLX_ARB_create_context")) {
+        fprintf(stderr, "ERROR: GLX_ARB_create_context extension not available\n");
+        return 0;
+    }
+    
     int context_attribs[] = {
         GLX_CONTEXT_MAJOR_VERSION_ARB, 3,
         GLX_CONTEXT_MINOR_VERSION_ARB, 3,
@@ -95,7 +98,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         None
     };
     
-    // Get framebuffer configs that match our criteria Note: No idea what this is.
+    // Get framebuffer configs that match our criteria
     int fbcount;
     GLXFBConfig* fbc = glXChooseFBConfig(app->display, app->screen, visual_attribs, &fbcount);
     if (!fbc) {
@@ -129,6 +132,10 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     
     // Get a visual.
     XVisualInfo *vi = glXGetVisualFromFBConfig(app->display, bestFbc);
+    if (!vi) {
+        fprintf(stderr, "ERROR: No appropriate visual found\n");
+        return 0;
+    }
     
     // Create colormap.
     app->colormap = XCreateColormap(app->display, RootWindow(app->display, app->screen), 
@@ -144,14 +151,22 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
                                 x, y, width, height, 0, vi->depth, InputOutput, 
                                 vi->visual, CWColormap | CWEventMask, &swa);
     
+    if (!app->window) {
+        fprintf(stderr, "ERROR: Failed to create window\n");
+        XFree(vi);
+        return 0;
+    }
+    
     // Set window title.
     XStoreName(app->display, app->window, title);
     
-    // Get the function to create OpenGL 3.3 context. Note: Who made these names? They are stupid.
-    PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribsARB = (PFNGLXCREATECONTEXTATTRIBSARBPROC) glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
+    // Get the function to create OpenGL 3.3 context.
+    PFNGLXCREATECONTEXTATTRIBSARBPROC glXCreateContextAttribsARB = 
+        (PFNGLXCREATECONTEXTATTRIBSARBPROC) glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
     
     if (!glXCreateContextAttribsARB) {
         fprintf(stderr, "ERROR: glXCreateContextAttribsARB() not found\n");
+        // Fall back to older method
         app->glx_context = glXCreateNewContext(app->display, bestFbc, GLX_RGBA_TYPE, NULL, True);
     } else {
         app->glx_context = glXCreateContextAttribsARB(app->display, bestFbc, NULL, True, context_attribs);
@@ -161,41 +176,58 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     if (!app->glx_context) {
         fprintf(stderr, "ERROR: Failed to create OpenGL context.\n");
         XFree(vi);
+        XDestroyWindow(app->display, app->window);
         return 0;
     }
     
     // Make context current.
     if (!glXMakeCurrent(app->display, app->window, app->glx_context)) {
         fprintf(stderr, "ERROR: Failed to make context current.\n");
+        glXDestroyContext(app->display, app->glx_context);
+        app->glx_context = NULL;
         XFree(vi);
+        XDestroyWindow(app->display, app->window);
         return 0;
     }
     
     // Map window.
     XMapWindow(app->display, app->window);
     
-    
     const char* version = (const char*)glGetString(GL_VERSION);
     const char* shaderVersion = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+
+    if (!version || !shaderVersion) {
+        fprintf(stderr, "ERROR: Failed to get OpenGL version information.\n");
+        glXDestroyContext(app->display, app->glx_context);
+        app->glx_context = NULL;
+        XFree(vi);
+        XDestroyWindow(app->display, app->window);
+        return 0;
+    }
 
     // Enable blending for text.
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-     if (!SInitializeRenderer()) {
-        fprintf(stderr, "ERROR: Failed to initialize rendering.");
+    // Initialize renderer
+    if (!SInitializeRenderer()) {
+        fprintf(stderr, "ERROR: Failed to initialize rendering.\n");
+        glXDestroyContext(app->display, app->glx_context);
+        app->glx_context = NULL;
         XFree(vi);
+        XDestroyWindow(app->display, app->window);
         return 0;
     }
     
     // Initialize text rendering.
     if (!initText("stdui/internal/courier_new.ttf")) {
         fprintf(stderr, "ERROR: Failed to initialize text rendering.\n");
+        glXDestroyContext(app->display, app->glx_context);
+        app->glx_context = NULL;
         XFree(vi);
+        XDestroyWindow(app->display, app->window);
         return 0;
     }
-
-   
 
     #ifdef STDUI_VERBAL_DEBUG
     printf("STATUS: Window created with code 0: \n OpenGL version: %s\n GLSL version: %s \n", version, shaderVersion);
@@ -205,7 +237,6 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     XFlush(app->display);
     return 1;
 }
-
 
 void SGetMouseState(SApplication *app) {
     if (app == NULL) {
@@ -217,11 +248,16 @@ void SGetMouseState(SApplication *app) {
     int win_x_return, win_y_return;
     unsigned int mask_return;
     
-    XQueryPointer(app->display, app->window, 
+    Bool result = XQueryPointer(app->display, app->window, 
                  &root_return, &child_return,
                  &root_x_return, &root_y_return,
                  &win_x_return, &win_y_return,
                  &mask_return);
+                 
+    if (result == False) {
+        // Pointer is not on the same screen as the window
+        return;
+    }
     
     // Update mouse position.
     app->mouseX = (float)win_x_return;
@@ -231,21 +267,23 @@ void SGetMouseState(SApplication *app) {
     app->mouseDown = (mask_return & Button1Mask) ? 1 : 0;
 }
 
-
 int SEventProcess(SApplication *app) {
-    if (app == NULL) {
+    if (app == NULL || app->display == NULL) {
         return 0;
     }
 
     #ifdef STDUI_VERBAL_DEBUG
-    printf("STATUS: Started processing events.");
+    printf("STATUS: Started processing events.\n");
     #endif
     
     if (XPending(app->display) > 0) {
         XNextEvent(app->display, &app->event);
         switch (app->event.type) {
             case Expose:
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                // Only handle expose if it's the last one in the queue
+                if (app->event.xexpose.count == 0) {
+                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                }
                 break;
             case KeyPress:
                 if (XLookupKeysym(&app->event.xkey, 0) == XK_Escape) {
@@ -265,8 +303,16 @@ int SEventProcess(SApplication *app) {
                 }
                 break;
             case MotionNotify:
+                // Compress motion events
+                while (XCheckTypedWindowEvent(app->display, app->window, MotionNotify, &app->event)) {
+                    // Just get the latest position
+                }
                 app->mouseX = (float)app->event.xmotion.x;
                 app->mouseY = (float)app->event.xmotion.y;
+                break;
+            case ClientMessage:
+                // Handle window close events (WM_DELETE_WINDOW)
+                // Would need to set up the atom first, not implemented here
                 break;
         }
     }
@@ -274,75 +320,88 @@ int SEventProcess(SApplication *app) {
     return 1;
 }
 
-
 void SDisplayClose(SApplication *app) {
     if (app == NULL) {
         return;
     }
     
+
+    
+    #ifdef IMAGE_H
+    // Cleanup image renderer if it exists
+    if (imageRenderer) {
+        imageRenderer = NULL;
+    }
+    #endif
  
     if (app->glx_context) {
         glXMakeCurrent(app->display, None, NULL);
         glXDestroyContext(app->display, app->glx_context);
+        app->glx_context = NULL;
     }
     
+    if (app->window) {
+        XDestroyWindow(app->display, app->window);
+        app->window = 0;
+    }
 
     if (app->colormap) {
         XFreeColormap(app->display, app->colormap);
+        app->colormap = 0;
     }
     
-
-    XDestroyWindow(app->display, app->window);
-    XCloseDisplay(app->display);
+    if (app->display) {
+        XCloseDisplay(app->display);
+        app->display = NULL;
+    }
 }
 
 static inline void SClearScreen(SApplication *app, float r, float g, float b) {
     glClearColor(r, g, b, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    // Reset view matrix.
+    // Note: Using fixed-function pipeline with OpenGL 3.3 context
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
 
-
 static inline int SGetCurrentWindowWidth(SApplication *app) {
-    if (app == NULL || app->display == NULL) {
+    if (app == NULL || app->display == NULL || app->window == 0) {
         return -1;
     }
     
-    int x, y; // Unused right now.        
-    unsigned int width, height, borderWidth, depth;
-    Window root_return;
-    
-    if (XGetGeometry(app->display, app->window, &root_return, &x, &y, &width, &height, &borderWidth, &depth)) { //Notice: Have had problems with this before.
-        return width; 
+    XWindowAttributes attr;
+    if (XGetWindowAttributes(app->display, app->window, &attr)) {
+        return attr.width;
     } else {
-        fprintf(stderr, "Error: Could not retrieve window geometry.\n");
+        fprintf(stderr, "Error: Could not retrieve window attributes.\n");
         return -1; 
     }
 }
 
-
 static inline int SGetCurrentWindowHeight(SApplication *app) {
-    if (app == NULL || app->display == NULL) {
+    if (app == NULL || app->display == NULL || app->window == 0) {
         return -1;
     }
     
-    int x, y;                
-    unsigned int width, height, borderWidth, depth;
-    Window root_return;
-
-    if (XGetGeometry(app->display, app->window, &root_return, &x, &y, &width, &height, &borderWidth, &depth)) { //Notice: Have had problems with this before.
-        return height;
+    XWindowAttributes attr;
+    if (XGetWindowAttributes(app->display, app->window, &attr)) {
+        return attr.height;
     } else {
-        fprintf(stderr, "Error: Could not retrieve window geometry.\n");
+        fprintf(stderr, "Error: Could not retrieve window attributes.\n");
         return -1; 
     }
 }
 
 void SUpdateViewport(SApplication *app, int width, int height) {
+    if (width <= 0 || height <= 0) {
+        return; // Avoid setting invalid viewport dimensions
+    }
+    
     glViewport(0, 0, width, height);
+    
+    // Note: Using fixed-function pipeline with OpenGL 3.3 context (Deprectated..)
+
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0, width, height, 0, -1, 1); // Origin at top-left.
@@ -351,6 +410,9 @@ void SUpdateViewport(SApplication *app, int width, int height) {
 }
 
 static inline void SBeginFrame(SApplication *app) {
+    if (app == NULL || app->display == NULL) {
+        return;
+    }
 
     #ifdef STDUI_VERBAL_DEBUG
     printf("STATUS: Entering Rendering Loop \n");
@@ -379,11 +441,17 @@ static inline void SBeginFrame(SApplication *app) {
 }
 
 static inline void SEndFrame(SApplication *app) {
-    if (app == NULL || app->display == NULL) {
+    if (app == NULL || app->display == NULL || app->window == 0) {
         return;
     }
     
     glXSwapBuffers(app->display, app->window);
+    // Process any pending X events to keep the UI responsive
+    while (XPending(app->display) > 0) {
+        XEvent event;
+        XNextEvent(app->display, &event);
+        // Handle essential events here if needed
+    }
 }
 
 #elif defined(_WIN32) || defined(_WIN64) 
