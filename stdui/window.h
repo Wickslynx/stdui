@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #endif 
 
+#include "widgets.h"
+
 
 #if defined(_WIN32) || defined(_WIN64)
     #pragma comment(lib, "opengl32.lib")
