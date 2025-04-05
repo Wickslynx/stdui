@@ -8,6 +8,7 @@
 #ifndef WIDGETS_H
 #include "widgets.h"
 #endif
+
 #ifndef STDUI_IMAGE_SUPPORT_OFF
 #include <GL/gl.h>
 
