@@ -181,7 +181,7 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
      if (!SInitializeRenderer()) {
-        fprintf(stderr, "ERROR: Failed to initialize rendering.")
+        fprintf(stderr, "ERROR: Failed to initialize rendering.");
         XFree(vi);
         return 0;
     }
