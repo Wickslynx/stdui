@@ -58,6 +58,7 @@ typedef struct {
     GLint projectionLoc;
     GLint colorLoc;
 } SRenderer;
+
 SRenderer renderer;
 
 // Initialize the renderer
@@ -210,6 +211,17 @@ static void createTransformMatrix(float* matrix, float x, float y, float width, 
     translateMatrix(matrix, x, y, 0.0f);
     rotateMatrix(matrix, rotation);
     scaleMatrix(matrix, width, height, 1.0f);
+}
+
+void setOrthographicProjection(GLuint programID, int width, int height) {
+    float projectionMatrix[16] = {
+        2.0f / width, 0.0f,         0.0f, 0.0f,
+        0.0f,        -2.0f / height, 0.0f, 0.0f,
+        0.0f,         0.0f,        -1.0f, 0.0f,
+       -1.0f,         1.0f,         0.0f, 1.0f
+    };
+    GLint projectionLoc = glGetUniformLocation(programID, "projection");
+    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, projectionMatrix);
 }
 
 
