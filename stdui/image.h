@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#include "widgets.h"
 
 #ifndef STDUI_IMAGE_SUPPORT_OFF
 #include <GL/gl.h>
