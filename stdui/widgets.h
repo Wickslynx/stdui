@@ -492,16 +492,7 @@ void SCleanupRenderer() {
 
 #include <vulkan/vulkan.h>
 
-typedef struct {
-    float r, g, b, a;
-} SColor;
 
-typedef struct {
-    float x, y;
-    float width, height;
-    float rotation;
-    SColor color;
-} SShapeProps;
 
 // Function to create a color
 static inline SColor SCreateColor(float r, float g, float b, float a) {
@@ -549,16 +540,7 @@ void SDrawCircle(SApplication *app, float color[3], float posX, float posY) {
 
 #else
 
-typedef struct {
-    float r, g, b, a;
-} SColor;
 
-typedef struct {
-    float x, y;
-    float width, height;
-    float rotation;
-    SColor color;
-} SShapeProps;
 
 // Function to create a color
 static inline SColor SCreateColor(float r, float g, float b, float a) {
