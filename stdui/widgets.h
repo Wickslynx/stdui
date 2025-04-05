@@ -339,6 +339,8 @@ bool SInitializeRenderer() {
     // Unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+
+    glEnable(GL_DEBUG_OUTPUT);
     
     return true;
 }
@@ -398,10 +400,11 @@ void SCircle(SApplication *app, const SShapeProps *props) {
     
     // Set color
     glUniform4f(renderer.colorLoc, props->color.r, props->color.g, props->color.b, props->color.a);
-    
-    // Draw circle
+
+    //Draw circle.
+    const int segments = 36; 
     glBindVertexArray(renderer.circleVAO);
-    glDrawElements(GL_TRIANGLES, 36 * 3, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, segments * 3, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
 
@@ -794,25 +797,36 @@ bool initText(const char* fontPath) {
     return true;
 }
 
+void SCleanupTextRenderer() {
+    // Clean up text rendering resources
+    glDeleteTextures(1, &fontTexture);
+    glDeleteVertexArrays(1, &textVAO);
+    glDeleteBuffers(1, &textVBO);
+    glDeleteProgram(textShader);
+}
+
+
 void SDrawText(SApplication *app, const char* text, float x, float y, float scale, float r, float g, float b) {
     // Save current OpenGL state
-    GLint prevProgram;
+    GLint prevProgram, prevTexture, prevVAO, prevBuffer;
+    GLboolean prevBlendEnabled;
+    GLint prevBlendSrc, prevBlendDst;
+    
     glGetIntegerv(GL_CURRENT_PROGRAM, &prevProgram);
-    
-    GLint prevTexture;
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &prevTexture);
-    
-    GLint prevVAO;
     glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &prevVAO);
-    
-    GLint prevBuffer;
     glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &prevBuffer);
     
-    // Use text shader program
-    glUseProgram(textShader);
-    glUniform3f(glGetUniformLocation(textShader, "textColor"), r, g, b);
-
-    // Get window dimensions for projection matrix
+    // Save blend state
+    prevBlendEnabled = glIsEnabled(GL_BLEND);
+    glGetIntegerv(GL_BLEND_SRC_ALPHA, &prevBlendSrc);
+    glGetIntegerv(GL_BLEND_DST_ALPHA, &prevBlendDst);
+    
+    // Enable blending for text
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+     // Get window dimensions for projection matrix
     float windowWidth = (float)SGetCurrentWindowWidth(app);
     float windowHeight = (float)SGetCurrentWindowHeight(app);
     
@@ -886,11 +900,19 @@ void SDrawText(SApplication *app, const char* text, float x, float y, float scal
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
     
+    
     // Restore previous OpenGL state
     glBindVertexArray(prevVAO);
     glBindBuffer(GL_ARRAY_BUFFER, prevBuffer);
     glBindTexture(GL_TEXTURE_2D, prevTexture);
     glUseProgram(prevProgram);
+    
+    // Restore blend state
+    if (!prevBlendEnabled)
+        glDisable(GL_BLEND);
+    glBlendFunc(prevBlendSrc, prevBlendDst);
 }
+
+
 
 #endif //WIDGETS_H 
