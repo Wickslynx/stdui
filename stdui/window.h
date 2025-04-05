@@ -47,6 +47,35 @@ void renderImage(ImageRenderer* renderer);
 #endif
 
 
+static inline int SGetCurrentWindowWidth(SApplication *app) {
+    if (app == NULL || app->display == NULL || app->window == 0) {
+        return -1;
+    }
+    
+    XWindowAttributes attr;
+    if (XGetWindowAttributes(app->display, app->window, &attr)) {
+        return attr.width;
+    } else {
+        fprintf(stderr, "Error: Could not retrieve window attributes.\n");
+        return -1; 
+    }
+}
+
+static inline int SGetCurrentWindowHeight(SApplication *app) {
+    if (app == NULL || app->display == NULL || app->window == 0) {
+        return -1;
+    }
+    
+    XWindowAttributes attr;
+    if (XGetWindowAttributes(app->display, app->window, &attr)) {
+        return attr.height;
+    } else {
+        fprintf(stderr, "Error: Could not retrieve window attributes.\n");
+        return -1; 
+    }
+}
+
+
 //Implementation of funcs.
 int SDisplayOpen(SApplication *app) {
     if (app == NULL) {
@@ -369,33 +398,7 @@ static inline void SClearScreen(SApplication *app, float r, float g, float b) {
     glLoadIdentity();
 }
 
-static inline int SGetCurrentWindowWidth(SApplication *app) {
-    if (app == NULL || app->display == NULL || app->window == 0) {
-        return -1;
-    }
-    
-    XWindowAttributes attr;
-    if (XGetWindowAttributes(app->display, app->window, &attr)) {
-        return attr.width;
-    } else {
-        fprintf(stderr, "Error: Could not retrieve window attributes.\n");
-        return -1; 
-    }
-}
 
-static inline int SGetCurrentWindowHeight(SApplication *app) {
-    if (app == NULL || app->display == NULL || app->window == 0) {
-        return -1;
-    }
-    
-    XWindowAttributes attr;
-    if (XGetWindowAttributes(app->display, app->window, &attr)) {
-        return attr.height;
-    } else {
-        fprintf(stderr, "Error: Could not retrieve window attributes.\n");
-        return -1; 
-    }
-}
 
 void SUpdateViewport(SApplication *app, int width, int height) {
     if (width <= 0 || height <= 0) {
