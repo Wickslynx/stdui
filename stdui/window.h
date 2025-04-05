@@ -37,7 +37,7 @@ typedef struct {
 
 // Forward declarations from other files (widget.h and image.h)
 bool initText(const char* fontPath);
-bool SInitializeRenderer(); /
+bool SInitializeRenderer(); 
 
 #ifdef IMAGE_H
 extern ImageRenderer* imageRenderer;
