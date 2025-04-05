@@ -1,6 +1,7 @@
 // Global stuff declared here.
 #ifndef STDUI_NO_STDLIB
 #include <stdio.h>
+#include <stdbool.h>
 #endif
 
 
