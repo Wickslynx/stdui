@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #endif 
 
-#include "internal/stdui_types.h"
+
 
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -24,7 +24,6 @@
 #include <GL/glxext.h>
 #include <GL/gl.h>
 
-
 typedef struct {
     Display *display;
     int screen;
@@ -36,6 +35,7 @@ typedef struct {
     float mouseY;
     int mouseDown;
 } SApplication;
+
 
 // Forward declarations from other files (widget.h and image.h)
 bool initText(const char* fontPath);
