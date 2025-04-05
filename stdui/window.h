@@ -229,6 +229,8 @@ int SWindowCreate(SApplication *app, const char *title, int x, int y, int width,
         return 0;
     }
 
+    setOrthographicProjection(renderer.basicProgram, SGetCurrentWindowWidth(app), SGetCurrentWindowHeight(app));
+
     #ifdef STDUI_VERBAL_DEBUG
     printf("STATUS: Window created with code 0: \n OpenGL version: %s\n GLSL version: %s \n", version, shaderVersion);
     #endif
