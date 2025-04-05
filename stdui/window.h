@@ -39,6 +39,8 @@ typedef struct {
 bool initText(const char* fontPath);
 bool SInitializeRenderer(); 
 
+extern SRenderer renderer;
+
 #ifdef IMAGE_H
 extern ImageRenderer* imageRenderer;
 void renderImage(ImageRenderer* renderer);
