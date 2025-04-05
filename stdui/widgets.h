@@ -7,7 +7,6 @@
 #include <stdbool.h>
 #include "internal/layout.h"
 #include "internal/font.h"
-#include "window.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "internal/stb_truetype.h"
