@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #endif 
 
-#include "widgets.h"
+#include "internal/stdui_types.h"
 
 
 #if defined(_WIN32) || defined(_WIN64)
